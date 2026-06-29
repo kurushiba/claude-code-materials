@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>講座全体の振り返り</title>
+    <style>
+        :root {
+            --primary-color: #FFD600;
+            --secondary-color: #25BAE9;
+            --text-black: #333333;
+            --background-gray: #EFF3F4;
+            --white: #FFFFFF;
+            --accent-red: #FF5252;
+            --accent-green: #4CAF50;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: var(--text-black);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .slide-container {
+            width: 90vw;
+            height: 50.625vw;
+            max-width: 1600px;
+            max-height: 900px;
+            position: relative;
+            background-color: var(--white);
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        @media (max-aspect-ratio: 16/9) {
+            .slide-container {
+                width: 177.78vh;
+                height: 90vh;
+            }
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            background-color: var(--white);
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .slide.bg-gray {
+            background-color: var(--background-gray);
+        }
+
+        .title-area {
+            height: 15%;
+            display: flex;
+            align-items: center;
+            padding: 0 5%;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .title-area.primary {
+            background-color: var(--primary-color);
+        }
+
+        .title-area.secondary {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .title-area h1 {
+            margin: 0;
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        .main-content {
+            height: 85%;
+            padding: 3% 5%;
+            box-sizing: border-box;
+            display: flex;
+            gap: 4%;
+        }
+
+        .content-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .content-right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .point-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .point-item {
+            font-size: 28px;
+            margin-bottom: 24px;
+            position: relative;
+            padding-left: 44px;
+            line-height: 1.5;
+        }
+
+        .point-item::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: var(--secondary-color);
+            font-weight: bold;
+            font-size: 32px;
+        }
+
+        /* Diagrams */
+        .diagram-box {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .flow-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            width: 100%;
+        }
+        
+        .horizontal-flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            gap: 12px;
+        }
+
+        .flow-step {
+            background: var(--primary-color);
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            width: 80%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .flow-step.alt {
+            background: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .arrow-down {
+            width: 0; 
+            height: 0; 
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 20px solid var(--text-black);
+        }
+
+        .arrow-right {
+            width: 0; 
+            height: 0; 
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+            border-left: 20px solid var(--text-black);
+        }
+
+        .grid-diagram {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            width: 100%;
+        }
+
+        .grid-item {
+            background: var(--white);
+            border: 2px solid var(--secondary-color);
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .grid-item-title {
+            font-weight: bold;
+            font-size: 24px;
+            color: var(--secondary-color);
+            margin-bottom: 12px;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            font-size: 20px;
+            color: #888;
+            z-index: 100;
+        }
+        
+        .mountain-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        .flag {
+            font-size: 64px;
+            margin-bottom: -10px;
+            z-index: 2;
+        }
+        
+        .mountain {
+            width: 0;
+            height: 0;
+            border-left: 150px solid transparent;
+            border-right: 150px solid transparent;
+            border-bottom: 200px solid #E0E0E0;
+            position: relative;
+        }
+        
+        .mountain::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: -30px;
+            width: 0;
+            height: 0;
+            border-left: 30px solid transparent;
+            border-right: 30px solid transparent;
+            border-bottom: 40px solid var(--white);
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        
+        <!-- Slide 1: タイトルスライド -->
+        <div class="slide active" id="slide1">
+            <div class="title-area primary">
+                <h1>講座全体の振り返り</h1>
+            </div>
+            <div class="main-content">
+                <div class="content-left">
+                    <ul class="point-list">
+                        <li class="point-item"><strong>お疲れ様でした！</strong><br><span style="font-size: 22px; color: #666;">ここまで長い時間のご受講、本当にありがとうございました</span></li>
+                        <li class="point-item"><strong>学びの総復習</strong><br><span style="font-size: 22px; color: #666;">これまでに学んできたClaude Codeの基礎から応用までを振り返ります</span></li>
+                        <li class="point-item"><strong>業務活用の土台が完成</strong><br><span style="font-size: 22px; color: #666;">明日から実務で使い始めるのに必要な知識は一通り身についています</span></li>
+                    </ul>
+                </div>
+                <div class="content-right">
+                    <div class="diagram-box">
+                        <div style="font-size: 28px; font-weight: bold; margin-bottom: 20px; color: var(--secondary-color);">目標達成！</div>
+                        <div class="mountain-container">
+                            <div class="flag">🚩</div>
+                            <div class="mountain"></div>
+                            <div style="margin-top: 20px; font-size: 20px; font-weight: bold;">Claude Codeマスターへの第一歩</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 振り返り前半 -->
+        <div class="slide bg-gray" id="slide2">
+            <div class="title-area secondary">
+                <h1>学んできたこと（基本・ワークフロー）</h1>
+            </div>
+            <div class="main-content">
+                <div class="content-left">
+                    <ul class="point-list">
+                        <li class="point-item"><strong>基本操作と応用</strong><br><span style="font-size: 22px; color: #666;">インストールから始め、@や!を使ったファイル参照・コマンド埋め込みを体験しました</span></li>
+                        <li class="point-item"><strong>基本のワークフロー</strong><br><span style="font-size: 22px; color: #666;">「探索→計画→実装→コミット」の開発サイクルを身につけました</span></li>
+                        <li class="point-item"><strong>コンテキスト管理</strong><br><span style="font-size: 22px; color: #666;"><code>/clear</code>・<code>/compact</code>・<code>/rewind</code>を使い分け、AIの記憶を整理する方法を学びました</span></li>
+                    </ul>
+                </div>
+                <div class="content-right">
+                    <div class="diagram-box">
+                        <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">基本のワークフロー</div>
+                        <div class="horizontal-flow" style="margin-bottom: 30px;">
+                            <div style="background: var(--white); border: 2px solid var(--secondary-color); padding: 12px; border-radius: 8px; font-weight: bold;">探索<br><span style="font-size:14px; font-weight:normal;">現状把握</span></div>
+                            <div class="arrow-right"></div>
+                            <div style="background: var(--white); border: 2px solid var(--secondary-color); padding: 12px; border-radius: 8px; font-weight: bold;">計画<br><span style="font-size:14px; font-weight:normal;">方針決定</span></div>
+                            <div class="arrow-right"></div>
+                            <div style="background: var(--primary-color); padding: 12px; border-radius: 8px; font-weight: bold;">実装<br><span style="font-size:14px; font-weight:normal;">コード生成</span></div>
+                            <div class="arrow-right"></div>
+                            <div style="background: var(--white); border: 2px solid var(--secondary-color); padding: 12px; border-radius: 8px; font-weight: bold;">コミット<br><span style="font-size:14px; font-weight:normal;">保存</span></div>
+                        </div>
+                        <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">記憶の整理（コマンド）</div>
+                        <div class="grid-diagram" style="grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                            <div class="grid-item" style="padding: 12px; border-color: #999;">/clear<br><span style="font-size: 14px; color: #666;">全消去</span></div>
+                            <div class="grid-item" style="padding: 12px; border-color: #999;">/compact<br><span style="font-size: 14px; color: #666;">要約して保持</span></div>
+                            <div class="grid-item" style="padding: 12px; border-color: #999;">/rewind<br><span style="font-size: 14px; color: #666;">巻き戻し</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 振り返り後半 -->
+        <div class="slide" id="slide3">
+            <div class="title-area primary">
+                <h1>学んできたこと（実践・拡張機能）</h1>
+            </div>
+            <div class="main-content">
+                <div class="content-left">
+                    <ul class="point-list">
+                        <li class="point-item"><strong>自分専用のルールブック</strong><br><span style="font-size: 22px; color: #666;"><code>CLAUDE.md</code>を育てて、プロジェクトごとの指示を自動化しました</span></li>
+                        <li class="point-item"><strong>実務で役立つTips</strong><br><span style="font-size: 22px; color: #666;">バグ修正、コードのリファクタリング、ドキュメントの自動生成などを実践しました</span></li>
+                        <li class="point-item"><strong>3つの拡張機能</strong><br><span style="font-size: 22px; color: #666;">Skills（能力追加）、サブエージェント（自律タスク）、Hooks（自動実行）の使い分けを学びました</span></li>
+                    </ul>
+                </div>
+                <div class="content-right">
+                    <div class="diagram-box">
+                        <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px; color: var(--secondary-color);">Claude Codeの応用力</div>
+                        <div class="grid-diagram" style="grid-template-columns: 1fr; gap: 16px; width: 80%;">
+                            <div class="grid-item" style="display: flex; align-items: center; gap: 16px; padding: 16px; border-color: #4CAF50; background: #E8F5E9;">
+                                <div style="font-size: 32px;">📝</div>
+                                <div style="text-align: left;">
+                                    <div style="font-weight: bold; font-size: 20px;">CLAUDE.md</div>
+                                    <div style="font-size: 14px; color: #666;">独自のルールを教育</div>
+                                </div>
+                            </div>
+                            <div class="grid-item" style="display: flex; align-items: center; gap: 16px; padding: 16px; border-color: var(--primary-color); background: #FFFDE7;">
+                                <div style="font-size: 32px;">💡</div>
+                                <div style="text-align: left;">
+                                    <div style="font-weight: bold; font-size: 20px;">実践Tips</div>
+                                    <div style="font-size: 14px; color: #666;">バグ修正・リファクタなど</div>
+                                </div>
+                            </div>
+                            <div class="grid-item" style="display: flex; align-items: center; gap: 16px; padding: 16px; border-color: var(--secondary-color); background: #E3F2FD;">
+                                <div style="font-size: 32px;">🔌</div>
+                                <div style="text-align: left;">
+                                    <div style="font-weight: bold; font-size: 20px;">拡張機能</div>
+                                    <div style="font-size: 14px; color: #666;">Skills/サブエージェント/Hooks</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide-number" id="slide-counter">1 / 3</div>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 3;
+
+        function updateCounter() {
+            document.getElementById('slide-counter').textContent = `${currentSlide} / ${totalSlides}`;
+        }
+
+        function showSlide(slideNumber) {
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+            document.getElementById(`slide${slideNumber}`).classList.add('active');
+            currentSlide = slideNumber;
+            updateCounter();
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function firstSlide() {
+            showSlide(1);
+        }
+
+        function lastSlide() {
+            showSlide(totalSlides);
+        }
+
+        document.addEventListener('keydown', function(event) {
+            switch(event.key) {
+                case 'ArrowRight':
+                case ' ':
+                    event.preventDefault();
+                    nextSlide();
+                    break;
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    prevSlide();
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    firstSlide();
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    lastSlide();
+                    break;
+                case '1':
+                case '2':
+                case '3':
+                    event.preventDefault();
+                    const slideNum = parseInt(event.key);
+                    if (slideNum >= 1 && slideNum <= totalSlides) {
+                        showSlide(slideNum);
+                    }
+                    break;
+            }
+        });
+
+        // Initialize
+        updateCounter();
+    </script>
+</body>
+</html>

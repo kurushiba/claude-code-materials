@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>サブエージェントとは？</title>
+    <style>
+      :root {
+        --primary-color: #ffd600;
+        --secondary-color: #25bae9;
+        --text-black: #333333;
+        --background-gray: #eff3f4;
+        --white: #ffffff;
+      }
+
+      body {
+        font-family:
+          'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo,
+          sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #000;
+        color: var(--text-black);
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .slide-container {
+        width: 90vw;
+        height: 50.625vw; /* 16:9 */
+        max-width: 1600px;
+        max-height: 900px;
+        position: relative;
+        background-color: var(--white);
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+      }
+
+      @media (max-aspect-ratio: 16/9) {
+        .slide-container {
+          width: 177.78vh;
+          height: 90vh;
+        }
+      }
+
+      .slide {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+        background-color: var(--white);
+      }
+
+      .slide.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .slide-bg-gray {
+        background-color: var(--background-gray);
+      }
+
+      .title-area {
+        height: 15%;
+        display: flex;
+        align-items: center;
+        padding: 0 5%;
+        font-size: 48px;
+        font-weight: bold;
+        color: var(--text-black);
+      }
+
+      .title-primary {
+        background-color: var(--primary-color);
+      }
+
+      .title-secondary {
+        background-color: var(--secondary-color);
+        color: var(--white);
+      }
+
+      .main-content {
+        height: 85%;
+        padding: 3% 5%;
+        display: flex;
+        box-sizing: border-box;
+        gap: 40px;
+      }
+
+      .left-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .right-content {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .full-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .point-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .point-item {
+        font-size: 28px;
+        margin-bottom: 24px;
+        line-height: 1.5;
+        display: flex;
+        align-items: flex-start;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+
+      .slide-bg-gray .point-item {
+        background-color: var(--white);
+      }
+
+      .slide:not(.slide-bg-gray) .point-item {
+        background-color: var(--background-gray);
+      }
+
+      .point-icon {
+        color: var(--secondary-color);
+        margin-right: 16px;
+        font-weight: bold;
+        font-size: 32px;
+      }
+
+      .point-title {
+        font-weight: bold;
+        color: var(--secondary-color);
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .point-title-primary {
+        font-weight: bold;
+        color: var(--primary-color);
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .diagram-box {
+        background-color: var(--white);
+        border-radius: 16px;
+        padding: 30px;
+        width: 100%;
+        height: 100%;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+        text-align: center;
+      }
+
+      /* 汎用図解スタイル */
+      .flow-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        gap: 20px;
+      }
+
+      .flow-item {
+        flex: 1;
+        background-color: var(--background-gray);
+        border: 3px solid var(--secondary-color);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        position: relative;
+      }
+
+      .flow-item h4 {
+        margin: 0 0 10px 0;
+        font-size: 24px;
+        color: var(--secondary-color);
+      }
+
+      .flow-item p {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .flow-arrow {
+        font-size: 40px;
+        color: var(--secondary-color);
+        font-weight: bold;
+      }
+
+      .vertical-flow {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        width: 100%;
+      }
+
+      .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        width: 100%;
+        height: 100%;
+      }
+
+      .grid-item {
+        background-color: var(--background-gray);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .grid-item h4 {
+        color: var(--secondary-color);
+        margin: 0 0 10px 0;
+        font-size: 22px;
+      }
+
+      .slide-number {
+        position: absolute;
+        bottom: 20px;
+        right: 30px;
+        font-size: 20px;
+        color: #888;
+      }
+
+      /* 特殊図解：サブエージェント概念図 */
+      .agent-concept {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 30px;
+        width: 100%;
+      }
+
+      .main-claude {
+        background-color: var(--primary-color);
+        border-radius: 50%;
+        width: 140px;
+        height: 140px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 24px;
+        font-weight: bold;
+        color: var(--text-black);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        z-index: 2;
+      }
+
+      .sub-agents-container {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        width: 100%;
+        position: relative;
+      }
+
+      .sub-agent-box {
+        background-color: var(--white);
+        border: 4px solid var(--secondary-color);
+        border-radius: 16px;
+        padding: 15px;
+        width: 160px;
+        text-align: center;
+        position: relative;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <!-- Slide 1: タイトル -->
+      <div class="slide slide1 active" id="slide1">
+        <div class="title-area title-primary">サブエージェントとは？</div>
+        <div class="main-content">
+          <div class="left-content">
+            <ul class="point-list">
+              <li class="point-item">
+                <span class="point-icon">✓</span>
+                <div>
+                  <span class="point-title">専門特化した独立AI</span>
+                  メインのClaudeから呼び出される、特定のタスクを処理する別のAI
+                </div>
+              </li>
+              <li class="point-item">
+                <span class="point-icon">✓</span>
+                <div>
+                  <span class="point-title">ファイルで定義 (.md)</span>
+                  役割指示、ツール権限、使用モデルを個別に設定可能
+                </div>
+              </li>
+              <li class="point-item">
+                <span class="point-icon">✓</span>
+                <div>
+                  <span class="point-title">メインの会話とは独立</span>
+                  途中の細かいやりとりは隠蔽され、要約結果だけがメインに返る
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="right-content">
+            <div class="diagram-box">
+              <div class="agent-concept">
+                <div
+                  style="
+                    font-weight: bold;
+                    font-size: 24px;
+                    color: var(--text-black);
+                  "
+                >
+                  メインの会話
+                </div>
+                <div class="main-claude">指揮役<br />Claude</div>
+                <div
+                  style="
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    width: 100%;
+                  "
+                >
+                  <svg
+                    width="360"
+                    height="60"
+                    viewBox="0 0 360 60"
+                    style="display: block; margin-top: -10px"
+                  >
+                    <defs>
+                      <marker
+                        id="arrowhead-end"
+                        markerWidth="10"
+                        markerHeight="7"
+                        refX="9"
+                        refY="3.5"
+                        orient="auto"
+                      >
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#25BAE9" />
+                      </marker>
+                    </defs>
+                    <line
+                      x1="160"
+                      y1="0"
+                      x2="80"
+                      y2="55"
+                      stroke="#25BAE9"
+                      stroke-width="4"
+                      marker-end="url(#arrowhead-end)"
+                    />
+                    <line
+                      x1="200"
+                      y1="0"
+                      x2="280"
+                      y2="55"
+                      stroke="#25BAE9"
+                      stroke-width="4"
+                      marker-end="url(#arrowhead-end)"
+                    />
+                  </svg>
+                  <div class="sub-agents-container" style="margin-top: 5px">
+                    <div class="sub-agent-box">
+                      <div
+                        style="
+                          color: var(--secondary-color);
+                          font-weight: bold;
+                          font-size: 20px;
+                        "
+                      >
+                        調査担当
+                      </div>
+                      <div style="font-size: 14px; margin-top: 10px">
+                        専用コンテキスト
+                      </div>
+                    </div>
+                    <div class="sub-agent-box">
+                      <div
+                        style="
+                          color: var(--secondary-color);
+                          font-weight: bold;
+                          font-size: 20px;
+                        "
+                      >
+                        実行担当
+                      </div>
+                      <div style="font-size: 14px; margin-top: 10px">
+                        専用コンテキスト
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-number">1 / 7</div>
+      </div>
+
+      <!-- Slide 2: 仕組み -->
+      <div class="slide slide2 slide-bg-gray" id="slide2">
+        <div class="title-area title-secondary">呼び出しと連携の仕組み</div>
+        <div class="main-content">
+          <div class="full-content">
+            <ul class="point-list" style="display: flex; gap: 20px">
+              <li class="point-item" style="flex: 1">
+                <span class="point-icon">1</span>
+                <div>自動で最適なエージェントを選択して仕事を振る</div>
+              </li>
+              <li class="point-item" style="flex: 1">
+                <span class="point-icon">2</span>
+                <div>サブエージェントは自律的に作業を進める</div>
+              </li>
+              <li class="point-item" style="flex: 1">
+                <span class="point-icon">3</span>
+                <div>最後に要約された結果だけをメインに返す</div>
+              </li>
+            </ul>
+
+            <div class="diagram-box" style="margin-top: 20px">
+              <div
+                class="flow-container"
+                style="justify-content: center; gap: 40px"
+              >
+                <div class="flow-item" style="max-width: 320px">
+                  <h4>メインClaude</h4>
+                  <p>
+                    タスク内容と説明文<br />を見比べて選ぶ<br /><br />要約された結果だけ<br />を受け取る
+                  </p>
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 30px;
+                  "
+                >
+                  <div class="flow-arrow" style="font-size: 32px">依頼 →</div>
+                  <div class="flow-arrow" style="font-size: 32px">← 結果</div>
+                </div>
+                <div
+                  class="flow-item"
+                  style="max-width: 320px; border-color: var(--primary-color)"
+                >
+                  <h4 style="color: var(--primary-color)">サブエージェント</h4>
+                  <p>自律的にファイル読み書き<br />コマンド実行</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-number">2 / 7</div>
+      </div>
+
+      <!-- Slide 3: メリット -->
+      <div class="slide slide3" id="slide3">
+        <div class="title-area title-primary">
+          サブエージェントの4つのメリット
+        </div>
+        <div class="main-content">
+          <div class="grid-container">
+            <div class="grid-item">
+              <div
+                style="
+                  font-size: 40px;
+                  color: var(--primary-color);
+                  font-weight: bold;
+                "
+              >
+                1
+              </div>
+              <h4>コンテキストの保護</h4>
+              <p style="font-size: 18px">
+                調査のノイズでメインの会話履歴が埋まるのを防ぎ、身軽な状態を保つ（一番重要！）
+              </p>
+            </div>
+            <div class="grid-item">
+              <div
+                style="
+                  font-size: 40px;
+                  color: var(--primary-color);
+                  font-weight: bold;
+                "
+              >
+                2
+              </div>
+              <h4>ツール権限の制限</h4>
+              <p style="font-size: 18px">
+                「読み取り専用」など、必要最小限の権限だけを渡して安全に作業させる
+              </p>
+            </div>
+            <div class="grid-item">
+              <div
+                style="
+                  font-size: 40px;
+                  color: var(--primary-color);
+                  font-weight: bold;
+                "
+              >
+                3
+              </div>
+              <h4>並列実行による高速化</h4>
+              <p style="font-size: 18px">
+                複数のタスクを手分けして同時並行で処理させ、体感速度を上げる
+              </p>
+            </div>
+            <div class="grid-item">
+              <div
+                style="
+                  font-size: 40px;
+                  color: var(--primary-color);
+                  font-weight: bold;
+                "
+              >
+                4
+              </div>
+              <h4>コストとパフォーマンス最適化</h4>
+              <p style="font-size: 18px">
+                軽い作業には安価なモデル(Haiku)、重要な作業には強力なモデル(Opus)と使い分ける
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="slide-number">3 / 7</div>
+      </div>
+
+      <!-- Slide 4: ユースケース -->
+      <div class="slide slide4 slide-bg-gray" id="slide4">
+        <div class="title-area title-secondary">代表的な4つのユースケース</div>
+        <div class="main-content">
+          <div class="left-content" style="flex: 1.5">
+            <ul class="point-list">
+              <li class="point-item" style="margin-bottom: 15px; padding: 15px">
+                <span class="point-icon">1</span>
+                <div>大量のログ解析や広い範囲のコード影響調査</div>
+              </li>
+              <li class="point-item" style="margin-bottom: 15px; padding: 15px">
+                <span class="point-icon">2</span>
+                <div>
+                  「Builder」が実装し「Validator」がレビューする客観的検証
+                </div>
+              </li>
+              <li class="point-item" style="margin-bottom: 15px; padding: 15px">
+                <span class="point-icon">3</span>
+                <div>複数案を同時に検証させる並行リサーチ</div>
+              </li>
+              <li class="point-item" style="margin-bottom: 15px; padding: 15px">
+                <span class="point-icon">4</span>
+                <div>調査→作成→編集とバトンを渡すマルチステップ処理</div>
+              </li>
+            </ul>
+          </div>
+          <div class="right-content" style="flex: 1">
+            <div class="diagram-box">
+              <div
+                style="
+                  font-size: 24px;
+                  font-weight: bold;
+                  color: var(--secondary-color);
+                  margin-bottom: 20px;
+                "
+              >
+                分業イメージ
+              </div>
+              <div class="vertical-flow">
+                <div
+                  style="
+                    background: var(--background-gray);
+                    padding: 15px;
+                    border-radius: 8px;
+                  "
+                >
+                  <strong>実装担当 (Builder)</strong><br />コードを書く
+                </div>
+                <div class="flow-arrow" style="font-size: 24px">↓</div>
+                <div
+                  style="
+                    background: var(--background-gray);
+                    padding: 15px;
+                    border-radius: 8px;
+                    border: 2px solid var(--primary-color);
+                  "
+                >
+                  <strong>検証担当 (Validator)</strong
+                  ><br />真っ新な目線でレビュー
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-number">4 / 7</div>
+      </div>
+
+      <!-- Slide 5: 注意点とコツ -->
+      <div class="slide slide5 slide-bg-gray" id="slide5">
+        <div class="title-area title-secondary">使いこなすためのポイント</div>
+        <div class="main-content">
+          <div class="left-content" style="flex: 1.2">
+            <ul class="point-list">
+              <li class="point-item" style="margin-bottom: 30px">
+                <span class="point-icon">!</span>
+                <div>
+                  <span
+                    class="point-title-primary"
+                    style="color: var(--secondary-color)"
+                    >大前提：真っ更なコンテキスト</span
+                  >
+                  メインの会話履歴は共有されない（新人スタッフに白紙のノートを渡すイメージ）
+                </div>
+              </li>
+              <li class="point-item">
+                <span class="point-icon">1</span>
+                <div>
+                  <span class="point-title"
+                    >入力の工夫（十分な文脈を渡す）</span
+                  >
+                  何を、何のために、どこから調べるのか、必要な情報を全てプロンプトに含める
+                </div>
+              </li>
+              <li class="point-item">
+                <span class="point-icon">2</span>
+                <div>
+                  <span class="point-title">出力の制御（短く返させる）</span>
+                  長大なレポートを返させないよう、「簡潔に要約して返すこと」とあらかじめ指示する
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="right-content" style="flex: 0.8">
+            <div class="diagram-box">
+              <div style="font-size: 80px; margin-bottom: 20px">⚠️</div>
+              <h4
+                style="
+                  color: var(--text-black);
+                  font-size: 24px;
+                  margin-bottom: 15px;
+                "
+              >
+                放任すると逆効果
+              </h4>
+              <p style="font-size: 18px; text-align: left">
+                文脈不足で見当違いな作業をしたり、長すぎる報告で結局メインのコンテキストを圧迫してしまうことがあります。
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="slide-number">5 / 7</div>
+      </div>
+
+      <!-- Slide 7: まとめ -->
+      <div class="slide slide7" id="slide7">
+        <div class="title-area title-primary">まとめ</div>
+        <div class="main-content">
+          <div
+            class="full-content"
+            style="justify-content: center; align-items: center"
+          >
+            <div
+              class="diagram-box"
+              style="width: 80%; background-color: var(--background-gray)"
+            >
+              <div
+                style="
+                  font-size: 60px;
+                  color: var(--secondary-color);
+                  margin-bottom: 20px;
+                "
+              >
+                ✓
+              </div>
+              <h3
+                style="
+                  font-size: 32px;
+                  color: var(--secondary-color);
+                  margin-bottom: 30px;
+                "
+              >
+                サブエージェントの活用
+              </h3>
+              <ul
+                style="
+                  text-align: left;
+                  font-size: 26px;
+                  line-height: 1.8;
+                  color: var(--text-black);
+                "
+              >
+                <li>メインの「コンテキスト」を守りながら分業できる</li>
+                <li>「読み取り専用」など安全な権限で動かせる</li>
+                <li>適材適所のモデル選びで効率よく作業が進む</li>
+                <li>指示出しと出力の要約をセットで行うのがコツ！</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="slide-number">7 / 7</div>
+      </div>
+    </div>
+
+    <script>
+      let currentSlide = 1;
+      const totalSlides = 7;
+
+      function showSlide(slideNumber) {
+        document.querySelectorAll('.slide').forEach((slide) => {
+          slide.classList.remove('active');
+        });
+        document.getElementById(`slide${slideNumber}`).classList.add('active');
+        currentSlide = slideNumber;
+      }
+
+      function nextSlide() {
+        if (currentSlide < totalSlides) {
+          showSlide(currentSlide + 1);
+        }
+      }
+
+      function prevSlide() {
+        if (currentSlide > 1) {
+          showSlide(currentSlide - 1);
+        }
+      }
+
+      function firstSlide() {
+        showSlide(1);
+      }
+
+      function lastSlide() {
+        showSlide(totalSlides);
+      }
+
+      document.addEventListener('keydown', function (event) {
+        switch (event.key) {
+          case 'ArrowRight':
+          case ' ':
+            event.preventDefault();
+            nextSlide();
+            break;
+          case 'ArrowLeft':
+            event.preventDefault();
+            prevSlide();
+            break;
+          case 'Home':
+            event.preventDefault();
+            firstSlide();
+            break;
+          case 'End':
+            event.preventDefault();
+            lastSlide();
+            break;
+          case '1':
+          case '2':
+          case '3':
+          case '4':
+          case '5':
+          case '6':
+          case '7':
+            event.preventDefault();
+            const slideNum = parseInt(event.key);
+            if (slideNum >= 1 && slideNum <= totalSlides) {
+              showSlide(slideNum);
+            }
+            break;
+        }
+      });
+
+      showSlide(1);
+    </script>
+  </body>
+</html>

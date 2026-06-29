@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>コンテキストとコンテキストウィンドウ</title>
+    <style>
+        :root {
+            --primary-color: #FFD600;
+            --secondary-color: #25BAE9;
+            --text-black: #333333;
+            --background-gray: #EFF3F4;
+            --white: #FFFFFF;
+            --danger-color: #FF5252;
+            --success-color: #4CAF50;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: var(--text-black);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .slide-container {
+            width: 90vw;
+            height: 50.625vw;
+            max-width: 1600px;
+            max-height: 900px;
+            position: relative;
+            background-color: var(--white);
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        @media (max-aspect-ratio: 16/9) {
+            .slide-container {
+                width: 177.78vh;
+                height: 90vh;
+            }
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .title-area {
+            height: 15%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .title-text {
+            font-size: 52px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 3% 5%;
+            display: flex;
+            gap: 5%;
+        }
+
+        .points-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .point-item {
+            background-color: var(--white);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border-left: 8px solid var(--secondary-color);
+        }
+
+        .point-title {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 0 0 12px 0;
+            color: var(--secondary-color);
+        }
+
+        .point-desc {
+            font-size: 24px;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .visual-area {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            padding: 30px;
+            position: relative;
+        }
+
+        /* Slide specific styles */
+        .bg-gray { background-color: var(--background-gray); }
+        .bg-white { background-color: var(--white); }
+        .bg-yellow-light { background-color: #FFFDE7; }
+
+        .title-blue {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+        
+        .title-yellow {
+            background-color: var(--primary-color);
+            color: var(--text-black);
+        }
+
+        /* Diagram styles */
+        .desk-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            gap: 40px;
+        }
+        
+        .desk {
+            width: 80%;
+            height: 120px;
+            background-color: #8D6E63;
+            border-radius: 10px;
+            position: relative;
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            padding: 10px;
+            box-sizing: border-box;
+            border-top: 15px solid #795548;
+        }
+
+        .document {
+            width: 60px;
+            height: 80px;
+            background-color: white;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 10px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .document::before {
+            content: '';
+            width: 70%;
+            height: 4px;
+            background-color: #eee;
+            margin-bottom: 6px;
+        }
+        .document::after {
+            content: '';
+            width: 70%;
+            height: 4px;
+            background-color: #eee;
+            margin-bottom: 6px;
+        }
+
+        .doc-text {
+            font-size: 14px;
+            font-weight: bold;
+            color: #666;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        .ai-brain {
+            width: 130px;
+            height: 130px;
+            background-color: var(--secondary-color);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 50px;
+            font-weight: bold;
+            box-shadow: 0 10px 20px rgba(37, 186, 233, 0.3);
+            position: relative;
+        }
+
+        .ai-brain::after {
+            content: '';
+            position: absolute;
+            bottom: -40px;
+            width: 4px;
+            height: 40px;
+            background-color: #ccc;
+        }
+
+        .info-bubble {
+            background-color: white;
+            border: 3px solid var(--primary-color);
+            border-radius: 20px;
+            padding: 10px 20px;
+            font-size: 20px;
+            font-weight: bold;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        /* Window diagram */
+        .window-diagram {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .capacity-bar-container {
+            width: 80%;
+            height: 60px;
+            background-color: #E0E0E0;
+            border-radius: 30px;
+            overflow: hidden;
+            border: 4px solid #BDBDBD;
+            position: relative;
+            margin-bottom: 40px;
+        }
+
+        .capacity-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            width: 70%; /* 70% full */
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 20px;
+            box-sizing: border-box;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            transition: width 1s ease;
+        }
+
+        .capacity-labels {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            font-size: 20px;
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        .action-box {
+            background-color: var(--danger-color);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 28px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 10px rgba(255, 82, 82, 0.3);
+        }
+
+        .action-arrow {
+            font-size: 40px;
+            color: #9e9e9e;
+            margin: 20px 0;
+        }
+
+        /* Grid for 4 reasons */
+        .reasons-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 20px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .reason-card {
+            background-color: white;
+            border-radius: 15px;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border-top: 6px solid var(--secondary-color);
+        }
+        
+        .reason-card:nth-child(even) {
+            border-top-color: var(--primary-color);
+        }
+
+        .reason-icon {
+            font-size: 40px;
+            margin-bottom: 5px;
+        }
+
+        .reason-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+            color: var(--text-black);
+        }
+
+        /* Summary diagram */
+        .summary-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            gap: 40px;
+        }
+
+        .summary-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .summary-box {
+            background-color: white;
+            border: 4px solid #ccc;
+            border-radius: 20px;
+            padding: 15px;
+            width: 220px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .box-bad {
+            border-color: var(--danger-color);
+        }
+
+        .box-good {
+            border-color: var(--success-color);
+        }
+
+        .summary-arrow {
+            font-size: 40px;
+            color: #ccc;
+        }
+
+        .badge {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .badge-bad { background-color: var(--danger-color); }
+        .badge-good { background-color: var(--success-color); }
+
+        .slide-indicator {
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <!-- Slide 1: コンテキストとは？ -->
+        <div class="slide bg-gray active" id="slide1">
+            <div class="title-area title-blue">
+                <h1 class="title-text">コンテキストとは？</h1>
+            </div>
+            <div class="main-content">
+                <div class="points-area">
+                    <div class="point-item">
+                        <h2 class="point-title">AIが参照する情報全体</h2>
+                        <p class="point-desc">AIエージェントがタスクを処理するために、現在把握しているすべての情報のことです。</p>
+                    </div>
+                    <div class="point-item">
+                        <h2 class="point-title">さまざまな情報が含まれる</h2>
+                        <p class="point-desc">会話履歴、読み込んだソースコード、コマンド結果、システムルールなどが含まれます。</p>
+                    </div>
+                    <div class="point-item">
+                        <h2 class="point-title">例え：机の上に広げた情報</h2>
+                        <p class="point-desc">「AIが今この瞬間、机の上に広げているすべての書類」とイメージすると分かりやすいです。</p>
+                    </div>
+                </div>
+                <div class="visual-area">
+                    <div class="desk-diagram">
+                        <div class="info-bubble">今、把握している情報！</div>
+                        <div class="ai-brain">AI</div>
+                        <div class="desk">
+                            <div class="document" style="transform: rotate(-10deg);">
+                                <div class="doc-text">会話</div>
+                            </div>
+                            <div class="document" style="transform: rotate(5deg); top: -20px;">
+                                <div class="doc-text">コード</div>
+                            </div>
+                            <div class="document" style="transform: rotate(-5deg);">
+                                <div class="doc-text">ルール</div>
+                            </div>
+                            <div class="document" style="transform: rotate(15deg); top: -10px;">
+                                <div class="doc-text">結果</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-indicator">1 / 4</div>
+        </div>
+
+        <!-- Slide 2: コンテキストウィンドウとは？ -->
+        <div class="slide bg-gray" id="slide2">
+            <div class="title-area title-blue">
+                <h1 class="title-text">コンテキストウィンドウとは？</h1>
+            </div>
+            <div class="main-content">
+                <div class="points-area">
+                    <div class="point-item">
+                        <h2 class="point-title">記憶できる「限界サイズ」</h2>
+                        <p class="point-desc">AIが一度の会話（セッション）で同時に処理できる情報の量のことです。机の「作業スペースの広さ」にあたります。</p>
+                    </div>
+                    <div class="point-item">
+                        <h2 class="point-title">作業が進むと埋まっていく</h2>
+                        <p class="point-desc">会話や読み込むファイルが増えると、スペースはどんどん埋まっていきます。上限（100万トークン）があります。</p>
+                    </div>
+                    <div class="point-item" style="border-left-color: var(--danger-color);">
+                        <h2 class="point-title" style="color: var(--danger-color);">あくまで一時的な記憶</h2>
+                        <p class="point-desc"><code>/clear</code>でリセットしたり、終了すると消えます。<code>/context</code>コマンドで使用量を確認できます。</p>
+                    </div>
+                </div>
+                <div class="visual-area">
+                    <div class="window-diagram">
+                        <div style="font-size: 28px; font-weight: bold; margin-bottom: 15px; color: var(--text-black);">机の作業スペース（記憶の限界）</div>
+                        
+                        <div class="capacity-bar-container">
+                            <div class="capacity-bar-fill">
+                                圧迫中...
+                            </div>
+                        </div>
+                        <div class="capacity-labels">
+                            <span>0</span>
+                            <span>最大容量（100万トークン）</span>
+                        </div>
+
+                        <div class="action-arrow">↓</div>
+
+                        <div class="action-box">
+                            🧹 /clear コマンドでリセット！
+                        </div>
+                        <p style="font-size: 20px; color: #666; margin-top: 15px; font-weight: bold;">※永続ファイルに書かない限り記憶は消えます</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-indicator">2 / 4</div>
+        </div>
+
+        <!-- Slide 3: コンテキスト管理が重要な理由 -->
+        <div class="slide bg-white" id="slide3">
+            <div class="title-area title-yellow">
+                <h1 class="title-text">コンテキスト管理が重要な4つの理由</h1>
+            </div>
+            <div class="main-content">
+                <div style="width: 100%; height: 100%; display: flex; flex-direction: column;">
+                    <p style="font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 20px;">なぜ机の上を片付ける必要があるのでしょうか？</p>
+                    <div class="reasons-grid" style="flex: 1;">
+                        <div class="reason-card">
+                            <div class="reason-icon">😵‍💫</div>
+                            <h3 class="reason-title">1. AIのポンコツ化を防ぐ</h3>
+                            <p style="font-size: 18px; margin-top: 10px;">容量が埋まると注意力が散漫になり、指示を忘れたり簡単なミスを連発します。</p>
+                        </div>
+                        <div class="reason-card">
+                            <div class="reason-icon">⚠️</div>
+                            <h3 class="reason-title">2. ルールを守れなくなる</h3>
+                            <p style="font-size: 18px; margin-top: 10px;">守れるルールの数には限界があります。無駄な情報が多いと、本当に重要なルールが無視されます。</p>
+                        </div>
+                        <div class="reason-card">
+                            <div class="reason-icon">💸</div>
+                            <h3 class="reason-title">3. 無駄なコストをかけない</h3>
+                            <p style="font-size: 18px; margin-top: 10px;">AIは毎回すべての履歴を読み直すため、不要な情報が残っていると毎回余分な料金がかかります。</p>
+                        </div>
+                        <div class="reason-card">
+                            <div class="reason-icon">🔄</div>
+                            <h3 class="reason-title">4. 過去のミスに引きずられない</h3>
+                            <p style="font-size: 18px; margin-top: 10px;">失敗したやり取りが残っていると、間違った推論に影響を受けて見当違いな方向に進んでしまいます。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-indicator">3 / 4</div>
+        </div>
+
+        <!-- Slide 4: まとめ -->
+        <div class="slide bg-yellow-light" id="slide4">
+            <div class="title-area title-blue">
+                <h1 class="title-text">まとめ：AIを賢く使うコツ</h1>
+            </div>
+            <div class="main-content">
+                <div class="points-area">
+                    <div class="point-item">
+                        <h2 class="point-title">× たくさん覚えさせれば良いわけではない</h2>
+                        <p class="point-desc">情報や履歴を詰め込みすぎると、逆にAIは混乱し、ミスが増え、コストも高くなってしまいます。</p>
+                    </div>
+                    <div class="point-item">
+                        <h2 class="point-title">〇 常に整理整頓しておく</h2>
+                        <p class="point-desc">必要な情報だけを整理して渡し、終わった作業の記憶はこまめにリセットすることが重要です。</p>
+                    </div>
+                    <div class="point-item">
+                        <h2 class="point-title">賢く、安く、正確に</h2>
+                        <p class="point-desc">机の上を常に綺麗にしておくことで、AIのパフォーマンスを最大限に引き出すことができます。</p>
+                    </div>
+                </div>
+                <div class="visual-area" style="background-color: transparent; box-shadow: none;">
+                    <div class="summary-diagram">
+                        <div class="summary-row">
+                            <div class="summary-box box-bad">
+                                <div class="badge badge-bad">NGな使い方</div>
+                                📚 散らかった机<br>
+                                <span style="font-size: 20px; color: #666;">・履歴が山積み<br>・不要なファイル多数</span>
+                            </div>
+                            <div class="summary-arrow">➡</div>
+                            <div style="font-size: 26px; font-weight: bold; color: var(--danger-color); white-space: nowrap;">
+                                ミス多発・高コスト
+                            </div>
+                        </div>
+                        
+                        <div class="summary-row">
+                            <div class="summary-box box-good">
+                                <div class="badge badge-good">理想の使い方</div>
+                                ✨ 綺麗な机<br>
+                                <span style="font-size: 18px; color: #666;">・必要な情報だけ<br>・こまめにリセット</span>
+                            </div>
+                            <div class="summary-arrow">➡</div>
+                            <div style="font-size: 26px; font-weight: bold; color: var(--success-color); white-space: nowrap;">
+                                賢い・安い・正確
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-indicator">4 / 4</div>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 4;
+
+        function showSlide(slideNumber) {
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+            document.getElementById(`slide${slideNumber}`).classList.add('active');
+            currentSlide = slideNumber;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function firstSlide() {
+            showSlide(1);
+        }
+
+        function lastSlide() {
+            showSlide(totalSlides);
+        }
+
+        document.addEventListener('keydown', function(event) {
+            switch(event.key) {
+                case 'ArrowRight':
+                case ' ':
+                    event.preventDefault();
+                    nextSlide();
+                    break;
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    prevSlide();
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    firstSlide();
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    lastSlide();
+                    break;
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                    event.preventDefault();
+                    const slideNum = parseInt(event.key);
+                    if (slideNum >= 1 && slideNum <= totalSlides) {
+                        showSlide(slideNum);
+                    }
+                    break;
+            }
+        });
+
+        // Initialize
+        showSlide(1);
+    </script>
+</body>
+</html>

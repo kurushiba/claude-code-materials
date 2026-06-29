@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Codeとは何か？</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #FFD600;
+    --secondary: #25BAE9;
+    --text: #333333;
+    --bg-gray: #EFF3F4;
+    --white: #FFFFFF;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    background: #111;
+    color: var(--text);
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  .slide-container {
+    width: 90vw;
+    height: 50.625vw;
+    max-width: 1600px;
+    max-height: 900px;
+    position: relative;
+    background: var(--white);
+    box-shadow: 0 0 60px rgba(0,0,0,0.6);
+    overflow: hidden;
+  }
+
+  @media (max-aspect-ratio: 16/9) {
+    .slide-container {
+      width: 177.78vh;
+      height: 90vh;
+    }
+  }
+
+  .slide {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0; left: 0;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .slide.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .title-area {
+    height: 14%;
+    display: flex;
+    align-items: center;
+    padding: 0 4%;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .title-area h1 {
+    font-size: clamp(24px, 3.2vw, 52px);
+    font-weight: 900;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .title-area.yellow { background: var(--primary); }
+  .title-area.blue   { background: var(--secondary); color: var(--white); }
+  .title-area.blue h1 { color: var(--white); }
+
+  .slide-num {
+    position: absolute;
+    right: 3%;
+    font-size: clamp(14px, 1.4vw, 22px);
+    font-weight: 700;
+    opacity: 0.55;
+  }
+
+  .main-content {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ─── Slide 1 ─── */
+  #slide1 .main-content {
+    background: var(--white);
+    align-items: center;
+    padding: 2% 5%;
+    gap: 4%;
+  }
+  .s1-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(10px, 1.8vh, 22px);
+  }
+  .s1-badge {
+    display: inline-block;
+    background: var(--primary);
+    color: var(--text);
+    font-weight: 700;
+    font-size: clamp(14px, 1.5vw, 22px);
+    padding: 0.3em 1em;
+    border-radius: 20px;
+    width: fit-content;
+  }
+  .s1-point {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--bg-gray);
+    border-radius: 12px;
+    padding: clamp(8px, 1.2vh, 16px) clamp(12px, 2vw, 24px);
+  }
+  .s1-point .icon {
+    font-size: clamp(22px, 2.4vw, 36px);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .s1-point .text { font-size: clamp(13px, 1.5vw, 22px); font-weight: 700; line-height: 1.45; }
+  .s1-point .sub  { font-size: clamp(11px, 1.1vw, 17px); color: #666; margin-top: 2px; }
+  .s1-right {
+    width: 44%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(8px, 1.5vh, 18px);
+  }
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: clamp(6px, 1vw, 14px);
+    width: 100%;
+    justify-content: center;
+  }
+  .flow-box {
+    background: var(--white);
+    border: 3px solid var(--secondary);
+    border-radius: 14px;
+    padding: clamp(8px, 1.2vh, 16px) clamp(10px, 1.4vw, 20px);
+    text-align: center;
+    font-weight: 700;
+    font-size: clamp(12px, 1.3vw, 20px);
+    min-width: clamp(70px, 8vw, 120px);
+    line-height: 1.3;
+  }
+  .flow-box.highlight {
+    background: var(--secondary);
+    color: var(--white);
+    border-color: var(--secondary);
+    font-size: clamp(13px, 1.5vw, 22px);
+  }
+  .flow-arrow {
+    font-size: clamp(16px, 2vw, 30px);
+    color: var(--secondary);
+    font-weight: 900;
+  }
+  .flow-label {
+    font-size: clamp(10px, 1.1vw, 16px);
+    color: #888;
+    text-align: center;
+    margin-top: -4px;
+  }
+
+  /* ─── Slide 2 ─── */
+  #slide2 .main-content {
+    background: var(--bg-gray);
+    padding: 2.5% 4%;
+    gap: 3%;
+  }
+  .s2-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(8px, 1.2vh, 16px);
+  }
+  .s2-head {
+    text-align: center;
+    font-size: clamp(14px, 1.6vw, 24px);
+    font-weight: 900;
+    padding: clamp(6px, 1vh, 12px);
+    border-radius: 10px;
+  }
+  .s2-head.gray-head { background: #ccc; color: #555; }
+  .s2-head.blue-head { background: var(--secondary); color: white; }
+  .s2-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    border-radius: 10px;
+    padding: clamp(8px, 1.1vh, 14px) clamp(10px, 1.4vw, 18px);
+    font-size: clamp(12px, 1.3vw, 20px);
+    font-weight: 600;
+  }
+  .s2-step .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .s2-step .dot.gray { background: #aaa; }
+  .s2-step .dot.blue { background: var(--secondary); }
+  .s2-divider {
+    width: 3px;
+    background: #ddd;
+    align-self: stretch;
+    border-radius: 2px;
+    margin: 0 1%;
+  }
+  .s2-cycle {
+    background: white;
+    border: 2.5px solid var(--secondary);
+    border-radius: 14px;
+    padding: clamp(8px, 1.2vh, 16px);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(6px, 1vh, 12px);
+  }
+  .cycle-item {
+    background: var(--secondary);
+    color: white;
+    border-radius: 8px;
+    padding: clamp(5px, 0.8vh, 10px) clamp(10px, 1.4vw, 18px);
+    font-size: clamp(12px, 1.3vw, 19px);
+    font-weight: 700;
+    width: 80%;
+    text-align: center;
+  }
+  .cycle-arrow { font-size: clamp(14px, 1.5vw, 22px); color: var(--secondary); }
+  .s2-caption {
+    font-size: clamp(10px, 1.1vw, 16px);
+    color: #888;
+    text-align: center;
+  }
+
+  /* ─── Slide 3 ─── */
+  #slide3 .main-content {
+    background: var(--white);
+    align-items: center;
+    justify-content: center;
+    padding: 2% 5%;
+    gap: 4%;
+  }
+  .s3-left {
+    width: 36%;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(8px, 1.3vh, 18px);
+  }
+  .s3-point {
+    background: var(--bg-gray);
+    border-radius: 12px;
+    padding: clamp(8px, 1.1vh, 14px) clamp(12px, 1.6vw, 22px);
+    font-size: clamp(12px, 1.3vw, 20px);
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .s3-point span { color: var(--secondary); font-weight: 900; }
+  .s3-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    height: 100%;
+  }
+  .hub {
+    background: var(--secondary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: clamp(12px, 1.4vw, 20px);
+    text-align: center;
+    line-height: 1.3;
+    width: clamp(80px, 11vw, 160px);
+    height: clamp(80px, 11vw, 160px);
+    position: relative;
+    z-index: 2;
+    flex-shrink: 0;
+  }
+  .spoke-group {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(6px, 1.1vh, 14px);
+  }
+  .spoke-card {
+    background: var(--bg-gray);
+    border-left: 4px solid var(--secondary);
+    border-radius: 10px;
+    padding: clamp(6px, 0.9vh, 12px) clamp(10px, 1.3vw, 18px);
+    font-size: clamp(11px, 1.2vw, 18px);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .spoke-card .sub { font-size: clamp(10px, 1vw, 15px); color: #666; font-weight: 400; }
+  .s3-conn {
+    display: flex;
+    align-items: center;
+    gap: clamp(4px, 0.8vw, 12px);
+  }
+  .conn-line {
+    height: 3px;
+    width: clamp(16px, 2.5vw, 40px);
+    background: var(--secondary);
+    opacity: 0.4;
+  }
+
+  /* ─── Slide 4 ─── */
+  #slide4 .main-content {
+    background: var(--bg-gray);
+    padding: 2% 4%;
+    gap: 3%;
+    align-items: stretch;
+  }
+  .s4-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(8px, 1.2vh, 16px);
+  }
+  .s4-head {
+    text-align: center;
+    border-radius: 12px;
+    padding: clamp(8px, 1.2vh, 16px);
+    font-size: clamp(16px, 1.8vw, 27px);
+    font-weight: 900;
+  }
+  .s4-head.gray-bg { background: #bbb; color: #444; }
+  .s4-head.blue-bg { background: var(--secondary); color: white; }
+  .s4-row {
+    display: flex;
+    align-items: center;
+    gap: clamp(8px, 1vw, 14px);
+    background: white;
+    border-radius: 10px;
+    padding: clamp(7px, 1vh, 13px) clamp(10px, 1.4vw, 18px);
+    font-size: clamp(12px, 1.25vw, 19px);
+  }
+  .s4-row .icon { font-size: clamp(18px, 2vw, 30px); flex-shrink: 0; }
+  .s4-row .label { font-weight: 700; }
+  .s4-row .desc  { font-size: clamp(10px, 1vw, 15px); color: #666; margin-top: 1px; }
+  .vs-divider {
+    width: 4px;
+    background: #ccc;
+    border-radius: 2px;
+    align-self: stretch;
+    margin: 0 1%;
+    flex-shrink: 0;
+  }
+  .vs-label {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: #888;
+    color: white;
+    border-radius: 50%;
+    width: clamp(32px, 3.5vw, 52px);
+    height: clamp(32px, 3.5vw, 52px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: clamp(12px, 1.3vw, 20px);
+    z-index: 3;
+    flex-shrink: 0;
+  }
+
+  /* ─── Slide 5 ─── */
+  #slide5 .main-content {
+    background: var(--white);
+    padding: 2.5% 4%;
+    flex-wrap: wrap;
+    align-content: center;
+    gap: clamp(10px, 1.6vh, 22px) clamp(10px, 1.6vw, 22px);
+  }
+  .cap-card {
+    flex: 1 1 calc(33% - 20px);
+    min-width: clamp(120px, 16vw, 240px);
+    max-width: calc(33% - 10px);
+    background: var(--bg-gray);
+    border-radius: 14px;
+    padding: clamp(10px, 1.4vh, 18px) clamp(12px, 1.5vw, 20px);
+    display: flex;
+    align-items: flex-start;
+    gap: clamp(8px, 1vw, 14px);
+    border-top: 4px solid var(--secondary);
+  }
+  .cap-card .num {
+    background: var(--secondary);
+    color: white;
+    border-radius: 8px;
+    width: clamp(28px, 3vw, 42px);
+    height: clamp(28px, 3vw, 42px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: clamp(14px, 1.5vw, 22px);
+    flex-shrink: 0;
+  }
+  .cap-card .body .title { font-size: clamp(13px, 1.4vw, 21px); font-weight: 700; }
+  .cap-card .body .desc  { font-size: clamp(11px, 1.1vw, 16px); color: #666; margin-top: 3px; line-height: 1.4; }
+
+  /* ─── Slide 6 ─── */
+  #slide6 .main-content {
+    background: var(--bg-gray);
+    padding: 2% 3.5%;
+    flex-wrap: wrap;
+    align-content: center;
+    gap: clamp(8px, 1.3vh, 18px) clamp(8px, 1.2vw, 18px);
+  }
+  .feat-card {
+    flex: 1 1 calc(33% - 18px);
+    min-width: clamp(100px, 14vw, 200px);
+    max-width: calc(33% - 10px);
+    background: white;
+    border-radius: 14px;
+    padding: clamp(10px, 1.3vh, 18px) clamp(12px, 1.4vw, 20px);
+    border-left: 5px solid var(--secondary);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(4px, 0.6vh, 8px);
+  }
+  .feat-card .icon { font-size: clamp(22px, 2.5vw, 36px); }
+  .feat-card .name { font-size: clamp(13px, 1.4vw, 21px); font-weight: 900; color: var(--secondary); }
+  .feat-card .desc { font-size: clamp(11px, 1.1vw, 16px); color: #555; line-height: 1.4; }
+
+  /* ─── Slide 7 ─── */
+  #slide7 .main-content {
+    background: var(--white);
+    padding: 2.5% 3.5%;
+    gap: clamp(8px, 1.2vw, 18px);
+    align-items: stretch;
+  }
+  .use-card {
+    flex: 1;
+    background: var(--bg-gray);
+    border-radius: 14px;
+    padding: clamp(12px, 1.8vh, 26px) clamp(10px, 1.3vw, 18px) clamp(12px, 1.6vh, 22px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
+    border-top: 5px solid var(--primary);
+  }
+  .use-card .icon { font-size: clamp(36px, 4.5vw, 64px); line-height: 1; }
+  .use-card .title {
+    font-size: clamp(14px, 1.5vw, 22px);
+    font-weight: 900;
+    text-align: center;
+    margin-top: clamp(6px, 0.9vh, 12px);
+  }
+  .use-card .divider {
+    width: 40px;
+    height: 3px;
+    background: var(--primary);
+    border-radius: 2px;
+    margin: clamp(6px, 0.9vh, 12px) 0;
+    flex-shrink: 0;
+  }
+  .use-card .desc {
+    font-size: clamp(11px, 1.1vw, 16px);
+    color: #555;
+    text-align: center;
+    line-height: 1.55;
+    flex: 1;
+  }
+  .use-card .example {
+    background: white;
+    border-radius: 10px;
+    padding: clamp(6px, 0.9vh, 12px) clamp(8px, 1vw, 14px);
+    font-size: clamp(10px, 1vw, 15px);
+    color: #444;
+    text-align: center;
+    line-height: 1.4;
+    width: 100%;
+    margin-top: clamp(6px, 0.9vh, 12px);
+    border-left: 3px solid var(--secondary);
+  }
+  .use-card .example::before {
+    content: "例）";
+    font-weight: 700;
+    color: var(--secondary);
+  }
+  .use-card .tag {
+    background: var(--primary);
+    color: var(--text);
+    border-radius: 20px;
+    font-size: clamp(10px, 1vw, 14px);
+    font-weight: 700;
+    padding: 0.3em 1em;
+    margin-top: clamp(8px, 1.1vh, 14px);
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="slide-container">
+
+  <!-- ══════════════════ Slide 1 ══════════════════ -->
+  <div class="slide active" id="slide1">
+    <div class="title-area yellow">
+      <h1>Claude Code とは何か？</h1>
+      <span class="slide-num">1 / 7</span>
+    </div>
+    <div class="main-content">
+      <div class="s1-left">
+        <span class="s1-badge">Anthropic が開発</span>
+        <div class="s1-point">
+          <span class="icon">🤖</span>
+          <div>
+            <div class="text">AIエージェント型コーディングツール</div>
+            <div class="sub">「エージェント型」＝自分の代わりに動いてくれるAI</div>
+          </div>
+        </div>
+        <div class="s1-point">
+          <span class="icon">⚡</span>
+          <div>
+            <div class="text">指示するだけで自律的に動く</div>
+            <div class="sub">計画・実装・テスト・修正を一連でこなす</div>
+          </div>
+        </div>
+        <div class="s1-point">
+          <span class="icon">👨‍💼</span>
+          <div>
+            <div class="text">優秀なエンジニアを雇ったようなイメージ</div>
+            <div class="sub">「この機能を追加して」→ あとは勝手にやってくれる</div>
+          </div>
+        </div>
+      </div>
+      <div class="s1-right">
+        <div style="font-size: clamp(13px,1.4vw,20px); font-weight:700; color:#888; margin-bottom:4px;">指示するだけで全部やってくれる</div>
+        <div class="flow-row">
+          <div>
+            <div class="flow-box">👤<br>あなた</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div>
+            <div class="flow-box" style="background:var(--primary);border-color:var(--primary);">「ログイン機能<br>を追加して」</div>
+          </div>
+        </div>
+        <div class="flow-arrow" style="writing-mode:horizontal-tb;">↓</div>
+        <div class="flow-box highlight" style="width:100%; font-size: clamp(14px,1.5vw,22px);">
+          🤖 Claude Code
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div style="display:flex; gap: clamp(4px,0.8vw,10px); width:100%; justify-content:center; flex-wrap:wrap;">
+          <div class="flow-box" style="border-color:var(--primary); font-size: clamp(10px,1.1vw,16px); min-width:0; flex:1;">📋 計画</div>
+          <div class="flow-box" style="border-color:var(--primary); font-size: clamp(10px,1.1vw,16px); min-width:0; flex:1;">✍️ 実装</div>
+          <div class="flow-box" style="border-color:var(--primary); font-size: clamp(10px,1.1vw,16px); min-width:0; flex:1;">🧪 テスト</div>
+          <div class="flow-box" style="border-color:var(--primary); font-size: clamp(10px,1.1vw,16px); min-width:0; flex:1;">🔧 修正</div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-box" style="border-color:#4CAF50; background:#E8F5E9; color:#2E7D32; width:100%; font-size: clamp(13px,1.4vw,20px);">
+          ✅ 完成したコード
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ Slide 2 ══════════════════ -->
+  <div class="slide" id="slide2">
+    <div class="title-area blue">
+      <h1>Claude Code は「自律的に動くAI」</h1>
+      <span class="slide-num">2 / 7</span>
+    </div>
+    <div class="main-content">
+      <div class="s2-col">
+        <div class="s2-head gray-head">⌨️ 普通のAIツール（補完型）</div>
+        <div class="s2-step"><span class="dot gray"></span>コードを書くのは<strong>人間</strong></div>
+        <div class="s2-step"><span class="dot gray"></span>「次はこう書きませんか？」と<strong>提案するだけ</strong></div>
+        <div class="s2-step"><span class="dot gray"></span>スマホの<strong>予測変換</strong>に近いイメージ</div>
+        <div class="s2-step"><span class="dot gray"></span>人間が判断して、人間が書く</div>
+        <div style="background:#f5f5f5; border-radius:12px; padding: clamp(10px,1.4vh,18px); flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px; margin-top: 4px;">
+          <div style="font-size: clamp(12px,1.3vw,19px); color:#888; font-weight:700;">作業の流れ</div>
+          <div style="font-size: clamp(13px,1.4vw,21px); font-weight:700; color:#555;">人間が書く → AIが提案 → 人間が選ぶ → 繰り返し…</div>
+        </div>
+      </div>
+      <div class="vs-divider" style="position:relative; display:flex; align-items:center; justify-content:center; width: clamp(40px,5vw,70px); flex-shrink:0;">
+        <div class="vs-label">VS</div>
+      </div>
+      <div class="s2-col">
+        <div class="s2-head blue-head">🤖 Claude Code（エージェント型）</div>
+        <div class="s2-step"><span class="dot blue"></span>「タスクを受け取り、<strong>自律的に完遂</strong>する」</div>
+        <div class="s2-step"><span class="dot blue"></span>あなたは<strong>指揮者</strong>、Claudeが実行者</div>
+        <div class="s2-step"><span class="dot blue"></span>結果を<strong>レビューして判断</strong>するのがあなたの役割</div>
+        <div class="s2-cycle">
+          <div style="font-size: clamp(12px,1.3vw,19px); font-weight:700; color:var(--secondary); margin-bottom:2px;">自律サイクル</div>
+          <div class="cycle-item">📋 計画を立てる</div>
+          <div class="cycle-arrow">↓</div>
+          <div class="cycle-item">✍️ コードを書く</div>
+          <div class="cycle-arrow">↓</div>
+          <div class="cycle-item">🧪 テストする</div>
+          <div class="cycle-arrow">↓</div>
+          <div class="cycle-item">🔧 エラーを直す</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ Slide 3 ══════════════════ -->
+  <div class="slide" id="slide3">
+    <div class="title-area blue">
+      <h1>Claude Code への接続方法</h1>
+      <span class="slide-num">3 / 7</span>
+    </div>
+    <div class="main-content">
+      <div class="s3-left">
+        <div class="s3-point">
+          どの方法でつないでも<br><span>同じエンジン</span>に接続される
+        </div>
+        <div class="s3-point">
+          設定・履歴・ルールは<br><span>どの環境でも共通</span>
+        </div>
+        <div class="s3-point">
+          この講座では<br><span>VS Code拡張機能</span>を使って進める
+        </div>
+      </div>
+      <div class="s3-right">
+        <div style="display:flex; align-items:center; gap: clamp(6px,1vw,14px); width:100%; justify-content:center;">
+          <!-- Left spokes -->
+          <div class="spoke-group">
+            <div class="s3-conn">
+              <div class="spoke-card">
+                💻 ターミナル CLI<div class="sub">コマンドラインから直接</div>
+              </div>
+              <div class="conn-line"></div>
+            </div>
+            <div class="s3-conn">
+              <div class="spoke-card">
+                🧩 VS Code / JetBrains<div class="sub">エディタ拡張機能</div>
+              </div>
+              <div class="conn-line"></div>
+            </div>
+          </div>
+          <!-- Hub -->
+          <div class="hub">Claude<br>Code<br>エンジン</div>
+          <!-- Right spokes -->
+          <div class="spoke-group">
+            <div class="s3-conn">
+              <div class="conn-line"></div>
+              <div class="spoke-card">
+                🌐 Webアプリ<div class="sub">ブラウザからアクセス</div>
+              </div>
+            </div>
+            <div class="s3-conn">
+              <div class="conn-line"></div>
+              <div class="spoke-card">
+                📱 iOS / Android<div class="sub">スマートフォンアプリ</div>
+              </div>
+            </div>
+            <div class="s3-conn">
+              <div class="conn-line"></div>
+              <div class="spoke-card">
+                🖥️ デスクトップアプリ<div class="sub">Mac / Windows対応</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ Slide 4 ══════════════════ -->
+  <div class="slide" id="slide4">
+    <div class="title-area yellow">
+      <h1>他のツールとどう違うの？</h1>
+      <span class="slide-num">4 / 7</span>
+    </div>
+    <div class="main-content" style="position:relative;">
+      <div class="s4-col">
+        <div class="s4-head gray-bg">GitHub Copilot / Cursor</div>
+        <div class="s4-row">
+          <span class="icon">⌨️</span>
+          <div>
+            <div class="label">コード補完型</div>
+            <div class="desc">書いている途中に次の候補を提示</div>
+          </div>
+        </div>
+        <div class="s4-row">
+          <span class="icon">📱</span>
+          <div>
+            <div class="label">スマホの予測変換に近い</div>
+            <div class="desc">「こう書きませんか？」と提案するだけ</div>
+          </div>
+        </div>
+        <div class="s4-row">
+          <span class="icon">🖊️</span>
+          <div>
+            <div class="label">書くのは人間</div>
+            <div class="desc">AIはあくまでアシスタント役</div>
+          </div>
+        </div>
+        <div class="s4-row">
+          <span class="icon">🎯</span>
+          <div>
+            <div class="label">スコープは「1行〜数行」</div>
+            <div class="desc">局所的な補完が得意</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:center; width: clamp(40px,5vw,70px); flex-shrink:0; position:relative;">
+        <div class="vs-label" style="position:relative; transform:none; left:auto; top:auto;">VS</div>
+      </div>
+      <div class="s4-col">
+        <div class="s4-head blue-bg">🤖 Claude Code</div>
+        <div class="s4-row">
+          <span class="icon">🚀</span>
+          <div>
+            <div class="label">タスク完遂型</div>
+            <div class="desc">「作って」と言えば最後までやり切る</div>
+          </div>
+        </div>
+        <div class="s4-row">
+          <span class="icon">👔</span>
+          <div>
+            <div class="label">優秀なエンジニアに依頼するイメージ</div>
+            <div class="desc">人間は「指揮者」として結果をレビュー</div>
+          </div>
+        </div>
+        <div class="s4-row">
+          <span class="icon">🤖</span>
+          <div>
+            <div class="label">実行するのはAI</div>
+            <div class="desc">計画・実装・テスト・修正を自律的に</div>
+          </div>
+        </div>
+        <div class="s4-row">
+          <span class="icon">📂</span>
+          <div>
+            <div class="label">スコープは「プロジェクト全体」</div>
+            <div class="desc">複数ファイルをまたいだ大きな変更も可</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ Slide 5 ══════════════════ -->
+  <div class="slide" id="slide5">
+    <div class="title-area blue">
+      <h1>Claude Code が自分でできること</h1>
+      <span class="slide-num">5 / 7</span>
+    </div>
+    <div class="main-content">
+      <div class="cap-card">
+        <div class="num">1</div>
+        <div class="body">
+          <div class="title">📁 ファイルの読み込み・作成・編集</div>
+          <div class="desc">コードベース全体を理解した上で、必要なファイルを自律的に操作</div>
+        </div>
+      </div>
+      <div class="cap-card">
+        <div class="num">2</div>
+        <div class="body">
+          <div class="title">🖥️ ターミナルコマンドの実行</div>
+          <div class="desc">ビルド・テスト・Lintを自分で実行してエラーを確認・修正</div>
+        </div>
+      </div>
+      <div class="cap-card">
+        <div class="num">3</div>
+        <div class="body">
+          <div class="title">🔀 Git 操作</div>
+          <div class="desc">ステージング→コミット→ブランチ作成→push→PR作成まで一気に</div>
+        </div>
+      </div>
+      <div class="cap-card">
+        <div class="num">4</div>
+        <div class="body">
+          <div class="title">🗂️ 複数ファイルを横断した変更</div>
+          <div class="desc">コンポーネント分割・リネームなど依存関係を壊さない複雑な変更も</div>
+        </div>
+      </div>
+      <div class="cap-card">
+        <div class="num">5</div>
+        <div class="body">
+          <div class="title">🌐 Web検索・外部ツール連携</div>
+          <div class="desc">わからないことは自発的に検索して調査し、実装に反映</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ Slide 6 ══════════════════ -->
+  <div class="slide" id="slide6">
+    <div class="title-area blue">
+      <h1>Claude Code の特長的な機能</h1>
+      <span class="slide-num">6 / 7</span>
+    </div>
+    <div class="main-content">
+      <div class="feat-card">
+        <div class="icon">🧠</div>
+        <div class="name">100万トークン対応</div>
+        <div class="desc">プロジェクト全体を「まるごと頭に入れて」から作業。依存関係の見落としが起きにくい</div>
+      </div>
+      <div class="feat-card">
+        <div class="icon">🖼️</div>
+        <div class="name">自然な入力受付</div>
+        <div class="desc">スクリーンショット・エラーログ・URL をそのまま貼り付けるだけでOK</div>
+      </div>
+      <div class="feat-card">
+        <div class="icon">📋</div>
+        <div class="name">Plan Mode（計画モード）</div>
+        <div class="desc">「いきなり実装する前に設計図を見せて」と言える機能。手戻りを防げる</div>
+      </div>
+      <div class="feat-card">
+        <div class="icon">📄</div>
+        <div class="name">CLAUDE.md</div>
+        <div class="desc">プロジェクトのルールブック。命名規則・方針を書くと毎セッション自動で読み込まれる</div>
+      </div>
+      <div class="feat-card">
+        <div class="icon">🪝</div>
+        <div class="name">Hooks（フック）</div>
+        <div class="desc">「ファイル編集後に自動フォーマット」など強制力ある自動化を設定できる</div>
+      </div>
+      <div class="feat-card">
+        <div class="icon">⚡</div>
+        <div class="name">Skills / サブエージェント</div>
+        <div class="desc">スラッシュコマンドで定型作業を一発実行。複数エージェントの並列処理も可能</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ Slide 7 ══════════════════ -->
+  <div class="slide" id="slide7">
+    <div class="title-area yellow">
+      <h1>どんな場面で使えるの？</h1>
+      <span class="slide-num">7 / 7</span>
+    </div>
+    <div class="main-content">
+      <div class="use-card">
+        <div class="icon">🐛</div>
+        <div class="title">バグ修正</div>
+        <div class="divider"></div>
+        <div class="desc">エラーログを貼り付けるだけで原因を特定・修正・テスト再実行まで自動でこなす</div>
+        <div class="example">エラーログをそのまま貼り付けると、スタックトレースを読んで修正パッチを当ててくれる</div>
+        <div class="tag">即効性◎</div>
+      </div>
+      <div class="use-card">
+        <div class="icon">✨</div>
+        <div class="title">新機能の実装</div>
+        <div class="divider"></div>
+        <div class="desc">デザイン画面のスクショや要件を渡すだけで、数時間でデプロイ可能なプロトタイプを生成</div>
+        <div class="example">FigmaのスクショをそのままClaudeに渡すとコンポーネントを即座に生成してくれる</div>
+        <div class="tag">スピード◎</div>
+      </div>
+      <div class="use-card">
+        <div class="icon">🔄</div>
+        <div class="title">リファクタリング</div>
+        <div class="divider"></div>
+        <div class="desc">巨大コンポーネントの分割・命名統一・型修正など、複数ファイルをまたいだ変更も一括処理</div>
+        <div class="example">Stripeが何万行ものScala→Java移行を数日で完了させた実績あり</div>
+        <div class="tag">大規模対応◎</div>
+      </div>
+      <div class="use-card">
+        <div class="icon">🧪</div>
+        <div class="title">テストの追加</div>
+        <div class="divider"></div>
+        <div class="desc">「カバレッジ100%になるまで」と指示するとTDDサイクルを自律で回し続ける</div>
+        <div class="example">テストを一括生成し、全パスするまで自動で修正ループを回してくれる</div>
+        <div class="tag">品質向上◎</div>
+      </div>
+      <div class="use-card">
+        <div class="icon">⚙️</div>
+        <div class="title">繰り返し作業の自動化</div>
+        <div class="divider"></div>
+        <div class="desc">毎朝PR自動レビューや夜間の依存パッケージ更新など、cronベースのバックグラウンド実行も設定可</div>
+        <div class="example">「毎朝9時にPRを自動レビューして」と設定するだけで毎日実行してくれる</div>
+        <div class="tag">自動化◎</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let current = 1;
+  const total = 7;
+
+  function showSlide(n) {
+    document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+    document.getElementById('slide' + n).classList.add('active');
+    current = n;
+  }
+
+  document.addEventListener('keydown', e => {
+    switch (e.key) {
+      case 'ArrowRight': case ' ':
+        e.preventDefault();
+        if (current < total) showSlide(current + 1);
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        if (current > 1) showSlide(current - 1);
+        break;
+      case 'Home':
+        e.preventDefault(); showSlide(1); break;
+      case 'End':
+        e.preventDefault(); showSlide(total); break;
+      default:
+        if (e.key >= '1' && e.key <= '7') {
+          e.preventDefault();
+          showSlide(parseInt(e.key));
+        }
+    }
+  });
+
+  showSlide(1);
+</script>
+</body>
+</html>

@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Skillsの概要と仕組み</title>
+    <style>
+      :root {
+        --primary-color: #ffd600;
+        --secondary-color: #25bae9;
+        --text-black: #333333;
+        --background-gray: #eff3f4;
+        --white: #ffffff;
+        --accent-green: #4caf50;
+        --accent-red: #f44336;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo,
+          sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #000;
+        color: var(--text-black);
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .slide-container {
+        width: 90vw;
+        height: 50.625vw;
+        max-width: 1600px;
+        max-height: 900px;
+        position: relative;
+        background-color: var(--white);
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+      }
+
+      @media (max-aspect-ratio: 16/9) {
+        .slide-container {
+          width: 177.78vh;
+          height: 90vh;
+        }
+      }
+
+      .slide {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        background-color: var(--white);
+        visibility: hidden;
+      }
+
+      .slide.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      /* 種類別の背景 */
+      .slide-intro .title-area {
+        background-color: var(--primary-color);
+      }
+      .slide-concept {
+        background-color: var(--background-gray);
+      }
+      .slide-concept .title-area {
+        background-color: var(--secondary-color);
+        color: var(--white);
+      }
+      .slide-compare .title-area {
+        background-color: var(--secondary-color);
+        color: var(--white);
+      }
+      .slide-summary .title-area {
+        background-color: var(--primary-color);
+      }
+      .slide-summary {
+        background-color: rgba(255, 214, 0, 0.1);
+      }
+
+      .title-area {
+        height: 15%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        padding: 0 5%;
+      }
+
+      .title-area h1 {
+        font-size: 52px;
+        margin: 0;
+        font-weight: bold;
+        text-align: center;
+      }
+
+      .main-content {
+        flex: 1;
+        padding: 4% 6%;
+        display: flex;
+        flex-direction: row;
+        gap: 4%;
+      }
+
+      .points-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .points-area ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .points-area li {
+        font-size: 28px;
+        line-height: 1.6;
+        margin-bottom: 24px;
+        position: relative;
+        padding-left: 40px;
+      }
+
+      .points-area li::before {
+        content: '✓';
+        position: absolute;
+        left: 0;
+        color: var(--secondary-color);
+        font-weight: bold;
+        font-size: 32px;
+      }
+
+      .points-area p {
+        font-size: 26px;
+        line-height: 1.6;
+        margin-bottom: 20px;
+      }
+
+      .figure-area {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      /* 図解用スタイル */
+      .box {
+        background-color: var(--white);
+        border: 3px solid var(--secondary-color);
+        border-radius: 12px;
+        padding: 24px;
+        text-align: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .box.primary {
+        border-color: var(--primary-color);
+        background-color: rgba(255, 214, 0, 0.1);
+      }
+
+      .box-title {
+        font-size: 26px;
+        font-weight: bold;
+        margin-bottom: 16px;
+        color: var(--secondary-color);
+      }
+
+      .box.primary .box-title {
+        color: #b39600; /* プライマリーの濃い色 */
+      }
+
+      .arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--secondary-color);
+        font-size: 40px;
+        font-weight: bold;
+        margin: 10px 0;
+      }
+
+      .arrow-right {
+        margin: 0 16px;
+      }
+      .arrow-down {
+        margin: 16px 0;
+      }
+
+      /* スライド別特殊レイアウト */
+      .flex-column {
+        flex-direction: column;
+      }
+
+      .flex-row {
+        display: flex;
+        flex-direction: row;
+        gap: 24px;
+        align-items: stretch;
+        width: 100%;
+      }
+
+      .text-center {
+        text-align: center;
+      }
+
+      .badge {
+        display: inline-block;
+        background-color: var(--primary-color);
+        color: var(--text-black);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 8px;
+      }
+
+      /* Step layout */
+      .step-container {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        width: 100%;
+      }
+
+      .step-box {
+        display: flex;
+        align-items: center;
+        background-color: var(--white);
+        border: 2px solid var(--background-gray);
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+      }
+
+      .step-number {
+        background-color: var(--secondary-color);
+        color: var(--white);
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: bold;
+        margin-right: 20px;
+        flex-shrink: 0;
+      }
+
+      .step-content h3 {
+        margin: 0 0 8px 0;
+        font-size: 22px;
+        color: var(--secondary-color);
+      }
+
+      .step-content p {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      /* Slide Control */
+      .slide-counter {
+        position: absolute;
+        bottom: 20px;
+        right: 30px;
+        font-size: 20px;
+        color: #888;
+      }
+
+      /* folder structure */
+      .folder-structure {
+        background-color: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 24px;
+        width: 100%;
+        font-size: 22px;
+      }
+
+      .folder-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .folder-item.indent {
+        margin-left: 32px;
+      }
+      .folder-icon {
+        font-size: 28px;
+        margin-right: 12px;
+      }
+      .file-desc {
+        color: #666;
+        font-size: 18px;
+        margin-left: 12px;
+      }
+      .highlight-file {
+        font-weight: bold;
+        color: var(--secondary-color);
+      }
+
+      /* compare layout */
+      .compare-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .compare-table th {
+        background-color: var(--background-gray);
+        padding: 16px;
+        font-size: 24px;
+        border: 2px solid #ddd;
+        text-align: center;
+      }
+
+      .compare-table td {
+        padding: 24px 16px;
+        font-size: 22px;
+        border: 2px solid #ddd;
+        vertical-align: top;
+      }
+
+      .compare-title {
+        font-weight: bold;
+        color: var(--secondary-color);
+        font-size: 28px;
+        margin-bottom: 12px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <!-- Slide 1: イントロダクション -->
+      <div class="slide slide-intro active" id="slide1">
+        <div class="title-area">
+          <h1>Skillsの2つの役割</h1>
+        </div>
+        <div class="main-content">
+          <div class="points-area">
+            <p>
+              <strong>Skills</strong
+              >は、Claudeに特定のタスクやワークフローを教える「再利用可能な指示セット」です。
+            </p>
+            <ul>
+              <li>
+                <strong>参照用スキル（知識）</strong><br /><span
+                  style="font-size: 22px; color: #666"
+                  >APIのコーディング規約やデザインガイドライン。「このルールに従って」という判断材料。</span
+                >
+              </li>
+              <li>
+                <strong>タスク用スキル（行動）</strong><br /><span
+                  style="font-size: 22px; color: #666"
+                  >デプロイ手順やバグ修正の流れ。「この順番で操作して」という作業のレシピ。</span
+                >
+              </li>
+              <li>
+                <strong>Agent Skills規格</strong><br /><span
+                  style="font-size: 22px; color: #666"
+                  >オープンスタンダードを採用。将来は他のAIツールでも使えるポータビリティ。</span
+                >
+              </li>
+            </ul>
+          </div>
+          <div class="figure-area">
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 24px;
+                width: 100%;
+              "
+            >
+              <div class="box primary">
+                <div class="box-title">参照用スキル 📖</div>
+                <div style="font-size: 22px; margin-bottom: 8px">
+                  「知識・ルール」を教える
+                </div>
+                <div style="font-size: 18px; color: #555">
+                  例：コーディング規約、アーキテクチャ方針
+                </div>
+              </div>
+              <div
+                class="box"
+                style="
+                  border-color: var(--secondary-color);
+                  background-color: rgba(37, 186, 233, 0.1);
+                "
+              >
+                <div class="box-title">タスク用スキル 🛠️</div>
+                <div style="font-size: 22px; margin-bottom: 8px">
+                  「行動・手順」を教える
+                </div>
+                <div style="font-size: 18px; color: #555">
+                  例：デプロイ手順、PR作成のステップ
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-counter">1/6</div>
+      </div>
+
+      <!-- Slide 2: 比較 -->
+      <div class="slide slide-compare" id="slide2">
+        <div class="title-area">
+          <h1>CLAUDE.mdとの違い</h1>
+        </div>
+        <div class="main-content flex-column">
+          <div style="text-align: center; margin-bottom: 32px">
+            <p style="font-size: 28px">
+              どちらもClaudeに指示を出すものですが、<strong>読み込まれるタイミングと目的</strong>が違います。
+            </p>
+          </div>
+
+          <table class="compare-table">
+            <tr>
+              <th style="width: 50%">CLAUDE.md</th>
+              <th style="width: 50%">Skills</th>
+            </tr>
+            <tr>
+              <td>
+                <div class="compare-title">プロジェクト全体のルール</div>
+                <div style="text-align: center; margin-bottom: 16px">
+                  <span
+                    class="badge"
+                    style="
+                      background-color: var(--secondary-color);
+                      color: white;
+                    "
+                    >常時読み込み</span
+                  >
+                </div>
+                <ul
+                  style="font-size: 22px; padding-left: 24px; line-height: 1.6"
+                >
+                  <li>
+                    すべてのセッションで<strong>常に</strong>コンテキストに入っている
+                  </li>
+                  <li>プロジェクトの基本的なDNA、絶対的な約束事を書く</li>
+                </ul>
+              </td>
+              <td>
+                <div class="compare-title">オンデマンドのプレイブック</div>
+                <div style="text-align: center; margin-bottom: 16px">
+                  <span
+                    class="badge"
+                    style="background-color: var(--primary-color)"
+                    >必要な時だけ呼び出し</span
+                  >
+                </div>
+                <ul
+                  style="font-size: 22px; padding-left: 24px; line-height: 1.6"
+                >
+                  <li>必要な状況でのみ読み込まれる</li>
+                  <li>
+                    特定のタスク専用の手順や、一部の領域だけで使う深い知識を書く
+                  </li>
+                </ul>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div class="slide-counter">2/6</div>
+      </div>
+
+      <!-- Slide 3: 概念説明 -->
+      <div class="slide slide-concept" id="slide3">
+        <div class="title-area">
+          <h1>Skillsの基本構造</h1>
+        </div>
+        <div class="main-content">
+          <div class="points-area">
+            <p>
+              Skillは単一のファイルではなく、<strong>ディレクトリ（フォルダ）</strong>として構成されます。
+            </p>
+            <ul>
+              <li>
+                <strong>SKILL.md が中心</strong><br /><span
+                  style="font-size: 22px; color: #666"
+                  >フォルダの中心には必ず
+                  <code>SKILL.md</code> があります。</span
+                >
+              </li>
+              <li>
+                <strong>メタデータと指示の本体</strong><br /><span
+                  style="font-size: 22px; color: #666"
+                  >冒頭のYAMLに「Skillの説明」などのメタデータを書き、その下に指示を書きます。</span
+                >
+              </li>
+              <li>
+                <strong>補助ファイルも同梱可能</strong><br /><span
+                  style="font-size: 22px; color: #666"
+                  >仕様書やスクリプトなどのアセットを同じフォルダに置いて連携できます。</span
+                >
+              </li>
+            </ul>
+          </div>
+          <div class="figure-area">
+            <div class="folder-structure">
+              <div class="folder-item">
+                <span class="folder-icon">📁</span>
+                <strong>my-deploy-skill/</strong>
+                <span class="file-desc">（Skillフォルダ）</span>
+              </div>
+              <div class="folder-item indent">
+                <span class="folder-icon">📄</span>
+                <span class="highlight-file">SKILL.md</span>
+                <span class="file-desc">← 中心の指示ファイル</span>
+              </div>
+              <div class="folder-item indent">
+                <span class="folder-icon">📁</span>
+                <span>scripts/</span>
+                <span class="file-desc">← 実行可能なコード</span>
+              </div>
+              <div class="folder-item indent">
+                <span class="folder-icon">📁</span>
+                <span>references/</span>
+                <span class="file-desc">← リファレンス等</span>
+              </div>
+              <div class="folder-item indent">
+                <span class="folder-icon">📁</span>
+                <span>assets/</span>
+                <span class="file-desc">← テンプレートや雛形</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-counter">3/6</div>
+      </div>
+
+      <!-- Slide 4: 概念説明 -->
+      <div class="slide slide-concept" id="slide4">
+        <div class="title-area">
+          <h1>段階的開示（Progressive Disclosure）</h1>
+        </div>
+        <div class="main-content flex-column">
+          <p style="font-size: 26px; text-align: center; margin-bottom: 24px">
+            Skillをたくさん登録してもコンテキストを圧迫しないよう、<strong>3段階で少しずつ</strong>読み込みます。
+          </p>
+
+          <div class="flex-row">
+            <div class="box" style="flex: 1">
+              <div class="badge">第1段階：セッション開始時</div>
+              <div class="box-title">メタデータのみ</div>
+              <p style="font-size: 20px">
+                名前と短い説明文だけをインデックスとして読み込む。<br /><br /><span
+                  style="color: #666"
+                  >📚
+                  <strong>例え：</strong>
+                  本棚に並んだ本の「背表紙のタイトル」だけを見ている状態</span
+                >
+              </p>
+            </div>
+
+            <div class="arrow">▶</div>
+
+            <div
+              class="box"
+              style="flex: 1; border-color: var(--primary-color)"
+            >
+              <div class="badge">第2段階：必要になった時</div>
+              <div class="box-title">SKILL.md本体</div>
+              <p style="font-size: 20px">
+                質問と一致するか手動で呼ばれた時に、具体的な指示を展開。<br /><br /><span
+                  style="color: #666"
+                  >📖
+                  <strong>例え：</strong>
+                  料理を作る時に、必要な料理本を「1冊だけ手に取って開く」状態</span
+                >
+              </p>
+            </div>
+
+            <div class="arrow">▶</div>
+
+            <div class="box" style="flex: 1">
+              <div class="badge">第3段階：さらに詳細が必要な時</div>
+              <div class="box-title">補助ファイル</div>
+              <p style="font-size: 20px">
+                タスクを進める中で、Claudeが必要と判断したら補助ファイルを読みに行く。<br /><br /><span
+                  style="color: #666"
+                  >📝
+                  <strong>例え：</strong>
+                  細かい別冊レシピなどを「その時だけ」取り出す状態</span
+                >
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="slide-counter">4/6</div>
+      </div>
+
+      <!-- Slide 5: 概念説明 -->
+      <div class="slide slide-intro" id="slide5">
+        <div class="title-area">
+          <h1>プラグインとマーケットプレイス</h1>
+        </div>
+        <div class="main-content">
+          <div class="points-area">
+            <p>
+              作ったSkillやカスタマイズ環境を、チームや組織に<strong>配布・共有する仕組み</strong>です。
+            </p>
+            <ul>
+              <li>
+                <strong>プラグイン</strong><br /><span
+                  style="font-size: 22px; color: #666"
+                  >Skills、Hooks、MCP設定などを1つにまとめたパッケージ。他のリポジトリでも即座に同じ環境を再現できます。</span
+                >
+              </li>
+              <li>
+                <strong>名前空間で衝突防止</strong><br /><span
+                  style="font-size: 22px; color: #666"
+                  ><code>プラグイン名:スキル名</code>
+                  の形式になり、同じ名前のSkillがあっても干渉しません。</span
+                >
+              </li>
+              <li>
+                <strong>マーケットプレイス</strong><br /><span
+                  style="font-size: 22px; color: #666"
+                  >プラグインを配布する場所。Gitリポジトリやnpmパッケージなどからインポートします。</span
+                >
+              </li>
+            </ul>
+          </div>
+          <div class="figure-area">
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                width: 100%;
+              "
+            >
+              <div class="box" style="width: 80%; margin-bottom: 16px">
+                <div class="box-title">自分のチームの環境</div>
+                <div>Skill A, Skill B, カスタムHook</div>
+              </div>
+
+              <div class="arrow arrow-down">
+                📦 プラグインとしてパッケージ化
+              </div>
+
+              <div class="box primary" style="width: 80%; margin-bottom: 16px">
+                <div class="box-title">マーケットプレイス (Git, npm等)</div>
+                <div>配布・ホスティング</div>
+              </div>
+
+              <div class="arrow arrow-down">⬇️ インポート</div>
+
+              <div class="flex-row" style="justify-content: center">
+                <div class="box" style="width: 45%">他のプロジェクト</div>
+                <div class="box" style="width: 45%">他のメンバー</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-counter">5/6</div>
+      </div>
+
+      <!-- Slide 6: まとめ・注意点 -->
+      <div class="slide slide-summary" id="slide6">
+        <div class="title-area">
+          <h1>外部プラグイン利用時の注意点</h1>
+        </div>
+        <div class="main-content flex-column" style="align-items: center">
+          <div
+            style="
+              background-color: #ffebee;
+              border-left: 8px solid var(--accent-red);
+              padding: 24px;
+              border-radius: 8px;
+              width: 90%;
+              margin-bottom: 40px;
+            "
+          >
+            <h2 style="color: var(--accent-red); margin-top: 0">
+              ⚠️ 必ず中身を確認してから使う！
+            </h2>
+            <p style="font-size: 24px; margin-bottom: 0">
+              プラグインは、あなたの開発環境の中で<strong
+                >Claude Codeの動作に直接影響</strong
+              >を与えます。想定外の自動操作（ファイル削除など）が走るリスクもあります。
+            </p>
+          </div>
+
+          <div class="step-container" style="width: 80%">
+            <div class="step-box">
+              <div
+                class="step-number"
+                style="background-color: var(--text-black)"
+              >
+                1
+              </div>
+              <div class="step-content">
+                <h3>信頼できる提供元か確認する</h3>
+                <p>
+                  公式のプラグインか、信頼できる開発者が提供しているものかを確認する。
+                </p>
+              </div>
+            </div>
+            <div class="step-box">
+              <div
+                class="step-number"
+                style="background-color: var(--secondary-color)"
+              >
+                2
+              </div>
+              <div class="step-content">
+                <h3>SkillsやHooksの中身を読む</h3>
+                <p>
+                  インストール前に、どんな指示が書かれているか、どんな操作をするのかを自分で確認する。
+                </p>
+              </div>
+            </div>
+            <div class="step-box">
+              <div
+                class="step-number"
+                style="
+                  background-color: var(--primary-color);
+                  color: var(--text-black);
+                "
+              >
+                3
+              </div>
+              <div class="step-content">
+                <h3>安全と判断してからインポート</h3>
+                <p>
+                  内容に問題がないことを確認した上で、自分のプロジェクトに適用する。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-counter">6/6</div>
+      </div>
+    </div>
+
+    <script>
+      let currentSlide = 1;
+      const totalSlides = 6;
+
+      function showSlide(slideNumber) {
+        document.querySelectorAll('.slide').forEach((slide) => {
+          slide.classList.remove('active');
+        });
+        document.getElementById(`slide${slideNumber}`).classList.add('active');
+        currentSlide = slideNumber;
+      }
+
+      function nextSlide() {
+        if (currentSlide < totalSlides) {
+          showSlide(currentSlide + 1);
+        }
+      }
+
+      function prevSlide() {
+        if (currentSlide > 1) {
+          showSlide(currentSlide - 1);
+        }
+      }
+
+      function firstSlide() {
+        showSlide(1);
+      }
+
+      function lastSlide() {
+        showSlide(totalSlides);
+      }
+
+      document.addEventListener('keydown', function (event) {
+        switch (event.key) {
+          case 'ArrowRight':
+          case ' ':
+            event.preventDefault();
+            nextSlide();
+            break;
+          case 'ArrowLeft':
+            event.preventDefault();
+            prevSlide();
+            break;
+          case 'Home':
+            event.preventDefault();
+            firstSlide();
+            break;
+          case 'End':
+            event.preventDefault();
+            lastSlide();
+            break;
+          case '1':
+          case '2':
+          case '3':
+          case '4':
+          case '5':
+          case '6':
+            event.preventDefault();
+            const slideNum = parseInt(event.key);
+            if (slideNum >= 1 && slideNum <= totalSlides) {
+              showSlide(slideNum);
+            }
+            break;
+        }
+      });
+
+      // 初期表示
+      showSlide(1);
+    </script>
+  </body>
+</html>

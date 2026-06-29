@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code Hooksの具体的な書き方</title>
+    <style>
+        :root {
+            --primary-color: #FFD600;
+            --secondary-color: #25BAE9;
+            --text-black: #333333;
+            --background-gray: #EFF3F4;
+            --white: #FFFFFF;
+            --accent-red: #FF5252;
+            --accent-green: #4CAF50;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: var(--text-black);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .slide-container {
+            width: 90vw;
+            height: 50.625vw;
+            max-width: 1600px;
+            max-height: 900px;
+            position: relative;
+            background-color: var(--white);
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        @media (max-aspect-ratio: 16/9) {
+            .slide-container {
+                width: 177.78vh;
+                height: 90vh;
+            }
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            background-color: var(--white);
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .slide.bg-gray {
+            background-color: var(--background-gray);
+        }
+
+        .title-area {
+            height: 15%;
+            display: flex;
+            align-items: center;
+            padding: 0 5%;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .title-area.primary {
+            background-color: var(--primary-color);
+        }
+
+        .title-area.secondary {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .title-area h1 {
+            margin: 0;
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        .main-content {
+            height: 85%;
+            padding: 3% 5%;
+            box-sizing: border-box;
+            display: flex;
+            gap: 4%;
+        }
+
+        .content-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .content-right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .point-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .point-item {
+            font-size: 28px;
+            margin-bottom: 24px;
+            position: relative;
+            padding-left: 44px;
+            line-height: 1.5;
+        }
+
+        .point-item::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: var(--secondary-color);
+            font-weight: bold;
+            font-size: 32px;
+        }
+
+        /* Diagrams */
+        .diagram-box {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .flow-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .flow-step {
+            background: var(--primary-color);
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            width: 80%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .flow-step.alt {
+            background: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .flow-step.gray {
+            background: #E0E0E0;
+            color: var(--text-black);
+        }
+
+        .arrow-down {
+            width: 0; 
+            height: 0; 
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 20px solid var(--text-black);
+        }
+
+        .arrow-right {
+            width: 0; 
+            height: 0; 
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+            border-left: 20px solid var(--text-black);
+            margin: 0 12px;
+        }
+
+        .grid-diagram {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            width: 100%;
+        }
+
+        .grid-item {
+            background: var(--white);
+            border: 2px solid var(--secondary-color);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .grid-item-title {
+            font-weight: bold;
+            font-size: 24px;
+            color: var(--secondary-color);
+            margin-bottom: 12px;
+        }
+
+        .code-block {
+            background: #282C34;
+            color: #ABB2BF;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 20px;
+            text-align: left;
+            width: 100%;
+            box-sizing: border-box;
+            line-height: 1.4;
+        }
+        
+        .code-highlight {
+            color: #E5C07B;
+        }
+
+        .code-string {
+            color: #98C379;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            font-size: 20px;
+            color: #888;
+            z-index: 100;
+        }
+
+        /* Custom diagram specific */
+        .scope-pyramid {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            gap: 8px;
+        }
+
+        .pyramid-layer {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 22px;
+            color: white;
+            border-radius: 4px;
+        }
+
+        .horizontal-flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .badge {
+            background: var(--accent-red);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 16px;
+            display: inline-block;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .badge.green {
+            background: var(--accent-green);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        
+        <!-- Slide 1: タイトルスライド -->
+        <div class="slide active" id="slide1">
+            <div class="title-area primary">
+                <h1>Claude Code Hooksの具体的な書き方</h1>
+            </div>
+            <div class="main-content">
+                <div class="content-left">
+                    <ul class="point-list">
+                        <li class="point-item">Hooksの保存場所（スコープ）の使い分け</li>
+                        <li class="point-item">基本構文とMatcherによる条件指定</li>
+                        <li class="point-item">高度なif構文と非同期（Async）実行</li>
+                    </ul>
+                </div>
+                <div class="content-right">
+                    <div class="diagram-box">
+                        <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px; color: var(--secondary-color);">Hooks設定の3ステップ</div>
+                        <div class="flow-diagram">
+                            <div class="flow-step">1. どこに書くか？<br><span style="font-size: 18px; font-weight: normal;">(User, Project等)</span></div>
+                            <div class="arrow-down"></div>
+                            <div class="flow-step">2. いつ動かすか？<br><span style="font-size: 18px; font-weight: normal;">(Matcher, if構文)</span></div>
+                            <div class="arrow-down"></div>
+                            <div class="flow-step">3. どう動かすか？<br><span style="font-size: 18px; font-weight: normal;">(同期, 非同期実行)</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: スコープ -->
+        <div class="slide bg-gray" id="slide2">
+            <div class="title-area secondary">
+                <h1>Hooksの6つの保存場所（スコープ）</h1>
+            </div>
+            <div class="main-content">
+                <div class="content-left">
+                    <ul class="point-list">
+                        <li class="point-item"><strong>ユーザーレベル:</strong> <code>~/.claude/settings.json</code><br><span style="font-size: 22px; color: #666;">自分専用のルール（通知など）</span></li>
+                        <li class="point-item"><strong>プロジェクトレベル:</strong> <code>.claude/settings.json</code><br><span style="font-size: 22px; color: #666;">チームで共有するルール（Linter実行など）</span></li>
+                        <li class="point-item"><strong>ローカルレベル:</strong> <code>.claude/settings.local.json</code><br><span style="font-size: 22px; color: #666;">Git共有しない、自分だけのプロジェクト固有ルール</span></li>
+                    </ul>
+                    <p style="font-size: 20px; color: #666; margin-top: 10px;">※他にプラグイン、Skillフロントマター（呼び出し時のみ有効）、マネージドポリシー（全社強制）があります。</p>
+                </div>
+                <div class="content-right">
+                    <div class="diagram-box">
+                        <div style="font-size: 24px; font-weight: bold; margin-bottom: 16px;">よく使う2つのスコープ</div>
+                        <div class="grid-diagram" style="grid-template-columns: 1fr; gap: 16px;">
+                            <div class="grid-item" style="border-color: var(--secondary-color); background: #E3F2FD;">
+                                <div class="grid-item-title">プロジェクトレベル</div>
+                                <div style="font-size: 20px;">Gitでコミットして<br><b>チーム全体</b>で共有</div>
+                                <div style="font-size: 16px; margin-top: 8px; color: #666;">例：コミット前の自動チェック</div>
+                            </div>
+                            <div class="grid-item" style="border-color: var(--primary-color); background: #FFFDE7;">
+                                <div class="grid-item-title" style="color: #D4AF37;">ユーザーレベル</div>
+                                <div style="font-size: 20px;">自分のPC上の<br><b>全プロジェクト</b>に有効</div>
+                                <div style="font-size: 16px; margin-top: 8px; color: #666;">例：処理完了時のデスクトップ通知</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 基本構文 -->
+        <div class="slide" id="slide3">
+            <div class="title-area secondary">
+                <h1>Hooksの基本構文と設定</h1>
+            </div>
+            <div class="main-content">
+                <div class="content-left">
+                    <ul class="point-list">
+                        <li class="point-item"><code>hooks</code>キーの下にイベント名（<code>PreToolUse</code>等）ごとに配列で定義</li>
+                        <li class="point-item"><strong>matcher:</strong> 絞り込み条件（ツール名など）</li>
+                        <li class="point-item"><strong>type:</strong> <code>command</code>（シェルコマンド実行）が基本</li>
+                        <li class="point-item"><strong>データ連携:</strong> フック発火時、スクリプトの標準入力にツール情報がJSON形式で渡される</li>
+                    </ul>
+                </div>
+                <div class="content-right">
+                    <div class="diagram-box" style="padding: 16px;">
+                        <div class="code-block" style="font-size: 16px;">
+{<br>
+&nbsp;&nbsp;<span class="code-highlight">"hooks"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #5C6370; font-style: italic;">// どのタイミングで？ (イベント名)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-highlight">"PreToolUse"</span>: [<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-highlight">"matcher"</span>: <span class="code-string">"Bash"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-highlight">"hooks"</span>: [<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-highlight">"type"</span>: <span class="code-string">"command"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-highlight">"if"</span>: <span class="code-string">"Bash(rm *)"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #5C6370; font-style: italic;">// 何を実行する？ (コマンド)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-highlight">"command"</span>: <span class="code-string">"${CLAUDE_PROJECT_DIR}/.claude/hooks/block-rm.sh"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;]<br>
+&nbsp;&nbsp;}<br>
+}
+                        </div>
+                        <div class="horizontal-flow" style="margin-top: 16px; justify-content: center;">
+                            <div class="flow-step" style="width: auto; padding: 10px; font-size: 18px;">Claude Code<br><span style="font-size: 14px;">(JSONデータを渡す)</span></div>
+                            <div class="arrow-right"></div>
+                            <div class="flow-step alt" style="width: auto; padding: 10px; font-size: 18px;">hook.sh<br><span style="font-size: 14px;">(標準入力で受け取る)</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Matcher -->
+        <div class="slide bg-gray" id="slide4">
+            <div class="title-area secondary">
+                <h1>Matcherによる実行条件の絞り込み</h1>
+            </div>
+            <div class="main-content">
+                <div class="content-left">
+                    <ul class="point-list">
+                        <li class="point-item">無関係な処理でフックが走るのを防ぐ「ふるい」の役割</li>
+                        <li class="point-item"><strong>完全一致:</strong> 英数字とパイプ記号<br><span style="font-size: 22px; color: #666;">例: <code>"Edit|Write"</code>（EditかWriteツール）</span></li>
+                        <li class="point-item"><strong>正規表現:</strong> 記号（ドットや*等）を含む場合<br><span style="font-size: 22px; color: #666;">例: <code>"mcp__.*"</code>（mcp__で始まるツール）</span></li>
+                    </ul>
+                </div>
+                <div class="content-right">
+                    <div class="diagram-box">
+                        <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">Matcherの仕組み</div>
+                        <div class="flow-diagram">
+                            <div style="display: flex; gap: 16px;">
+                                <div class="grid-item" style="padding: 10px; border-color: #ccc;">Bash</div>
+                                <div class="grid-item" style="padding: 10px; border-color: #ccc;">Edit</div>
+                                <div class="grid-item" style="padding: 10px; border-color: #ccc;">Write</div>
+                            </div>
+                            <div class="arrow-down"></div>
+                            <div class="flow-step alt" style="border-radius: 40px; padding: 12px 24px;">Matcher: <code>"Edit|Write"</code></div>
+                            <div class="arrow-down"></div>
+                            <div style="display: flex; gap: 16px;">
+                                <div class="grid-item" style="padding: 10px; background: #E0E0E0; border-color: #999; color: #666; text-decoration: line-through;">Bash</div>
+                                <div class="grid-item" style="padding: 10px; border-color: var(--secondary-color); background: #E3F2FD;">Edit</div>
+                                <div class="grid-item" style="padding: 10px; border-color: var(--secondary-color); background: #E3F2FD;">Write</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: if構文 -->
+        <div class="slide" id="slide5">
+            <div class="title-area secondary">
+                <h1>より詳細な条件指定「if構文」</h1>
+            </div>
+            <div class="main-content">
+                <div class="content-left">
+                    <ul class="point-list">
+                        <li class="point-item">ツールの<b>引数（中身）</b>まで見て発火を制御<span class="badge">ツールイベント限定</span></li>
+                        <li class="point-item"><strong>書き方:</strong> <code>"Bash(git *)"</code> や <code>"Edit(*.ts)"</code></li>
+                        <li class="point-item">複合コマンド（<code>npm test && git push</code>）も自動分割してマッチ可能</li>
+                        <li class="point-item">スクリプトの無駄な起動を防ぐため、<strong>処理速度が向上する</strong></li>
+                    </ul>
+                </div>
+                <div class="content-right">
+                    <div class="grid-diagram">
+                        <div class="grid-item">
+                            <div class="grid-item-title" style="color: #666;">Matcherのみ</div>
+                            <div style="font-size: 18px; text-align: left; margin-bottom: 12px;"><code>"Bash"</code></div>
+                            <div style="font-size: 16px; background: #F5F5F5; padding: 8px; border-radius: 4px; text-align: left;">
+                                <div style="color: var(--accent-red)">✗ ls (起動して無視)</div>
+                                <div style="color: var(--accent-red)">✗ echo (起動して無視)</div>
+                                <div style="color: var(--accent-green)">✓ git push (起動して実行)</div>
+                            </div>
+                            <div style="font-size: 16px; color: var(--accent-red); margin-top: 8px; font-weight: bold;">毎回スクリプトが起動し遅い</div>
+                        </div>
+                        <div class="grid-item" style="border-color: var(--primary-color);">
+                            <div class="grid-item-title" style="color: var(--primary-color);">if構文</div>
+                            <div style="font-size: 18px; text-align: left; margin-bottom: 12px;"><code>"Bash(git *)"</code></div>
+                            <div style="font-size: 16px; background: #F5F5F5; padding: 8px; border-radius: 4px; text-align: left;">
+                                <div style="color: #999">ー ls (起動しない)</div>
+                                <div style="color: #999">ー echo (起動しない)</div>
+                                <div style="color: var(--accent-green)">✓ git push (起動して実行)</div>
+                            </div>
+                            <div style="font-size: 16px; color: var(--accent-green); margin-top: 8px; font-weight: bold;">必要な時だけ起動し速い</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 非同期実行 -->
+        <div class="slide bg-gray" id="slide6">
+            <div class="title-area secondary">
+                <h1>Claudeを待たせない「非同期実行」</h1>
+            </div>
+            <div class="main-content">
+                <div class="content-left">
+                    <ul class="point-list">
+                        <li class="point-item">設定に <code>"async": true</code> を追加</li>
+                        <li class="point-item">裏で最大 <code>timeout</code> 秒間スクリプトを走らせ、Claudeの作業をブロックしない</li>
+                        <li class="point-item"><strong>注意点:</strong> ツールの実行を途中で止められないため、危険なコマンドのブロックなど安全用途には使えない</li>
+                        <li class="point-item"><code>asyncRewake</code>: 処理失敗時にClaudeを自動再起動</li>
+                    </ul>
+                </div>
+                <div class="content-right">
+                    <div class="diagram-box">
+                        <div style="font-size: 22px; font-weight: bold; margin-bottom: 16px; width: 100%; text-align: left;">通常のフック（同期）</div>
+                        <div class="horizontal-flow" style="margin-bottom: 24px; justify-content: flex-start; gap: 8px;">
+                            <div style="background: #E0E0E0; padding: 8px; border-radius: 4px;">Claude作業</div>
+                            <div style="background: var(--accent-red); color: white; padding: 8px; border-radius: 4px;">フック実行 (待機)</div>
+                            <div style="background: #E0E0E0; padding: 8px; border-radius: 4px;">Claude作業</div>
+                        </div>
+                        
+                        <div style="font-size: 22px; font-weight: bold; margin-bottom: 16px; width: 100%; text-align: left; color: var(--secondary-color);">非同期フック（async）</div>
+                        <div style="width: 100%; position: relative; height: 80px;">
+                            <div style="background: #E3F2FD; border: 1px solid var(--secondary-color); padding: 8px; border-radius: 4px; position: absolute; top: 0; left: 0; width: 80%;">Claude作業（止まらない）</div>
+                            <div style="background: var(--primary-color); padding: 8px; border-radius: 4px; position: absolute; top: 40px; left: 30%; width: 50%;">フック実行（裏で動く）</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: /hooksコマンド -->
+        <div class="slide" id="slide7">
+            <div class="title-area primary">
+                <h1>フックの確認と対話的作成</h1>
+            </div>
+            <div class="main-content">
+                <div class="content-left">
+                    <ul class="point-list">
+                        <li class="point-item"><code>/hooks</code> コマンドで有効なフック一覧や発火回数を確認可能（デバッグに便利）</li>
+                        <li class="point-item">一覧画面は読み取り専用で、直接編集は不可</li>
+                        <li class="point-item"><strong>ベストプラクティス:</strong><br>フックの作成や変更は、Claude Codeにプロンプトで直接お願いする<br><span style="font-size: 22px; color: #666;">JSONの構文エラーやエスケープミスを防げる</span></li>
+                    </ul>
+                </div>
+                <div class="content-right">
+                    <div class="diagram-box">
+                        <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">フック作成のベストプラクティス</div>
+                        <div class="grid-diagram" style="grid-template-columns: 1fr; gap: 16px;">
+                            <div class="grid-item" style="border-color: var(--secondary-color); background: #E3F2FD; display: flex; align-items: center; gap: 16px;">
+                                <div style="font-size: 40px;">👤</div>
+                                <div style="text-align: left;">
+                                    <div style="font-weight: bold; font-size: 18px; margin-bottom: 4px;">ユーザーの指示</div>
+                                    <div style="font-size: 16px; color: #333;">「npm実行前にbunを使うよう警告するフックを作って」</div>
+                                </div>
+                            </div>
+                            <div class="arrow-down" style="margin: 0 auto;"></div>
+                            <div class="grid-item" style="border-color: var(--primary-color); background: #FFFDE7; display: flex; align-items: center; gap: 16px;">
+                                <div style="font-size: 40px;">🤖</div>
+                                <div style="text-align: left;">
+                                    <div style="font-weight: bold; font-size: 18px; margin-bottom: 4px;">Claude Code</div>
+                                    <div style="font-size: 16px; color: #333;">シェルスクリプト作成 ＋ settings.json更新 を自動でやってくれる</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide-number" id="slide-counter">1 / 7</div>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 7;
+
+        function updateCounter() {
+            document.getElementById('slide-counter').textContent = `${currentSlide} / ${totalSlides}`;
+        }
+
+        function showSlide(slideNumber) {
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+            document.getElementById(`slide${slideNumber}`).classList.add('active');
+            currentSlide = slideNumber;
+            updateCounter();
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function firstSlide() {
+            showSlide(1);
+        }
+
+        function lastSlide() {
+            showSlide(totalSlides);
+        }
+
+        document.addEventListener('keydown', function(event) {
+            switch(event.key) {
+                case 'ArrowRight':
+                case ' ':
+                    event.preventDefault();
+                    nextSlide();
+                    break;
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    prevSlide();
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    firstSlide();
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    lastSlide();
+                    break;
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                    event.preventDefault();
+                    const slideNum = parseInt(event.key);
+                    if (slideNum >= 1 && slideNum <= totalSlides) {
+                        showSlide(slideNum);
+                    }
+                    break;
+            }
+        });
+
+        // Initialize
+        updateCounter();
+    </script>
+</body>
+</html>

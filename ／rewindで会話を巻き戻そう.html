@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Claude Code - /rewindコマンド</title>
+    <style>
+        :root {
+            --primary-color: #FFD600;
+            --secondary-color: #25BAE9;
+            --text-black: #333333;
+            --background-gray: #EFF3F4;
+            --white: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: var(--text-black);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .slide-container {
+            width: 90vw;
+            height: 50.625vw; /* 16:9 */
+            max-width: 1600px;
+            max-height: 900px;
+            position: relative;
+            background-color: var(--white);
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        @media (max-aspect-ratio: 16/9) {
+            .slide-container {
+                width: 177.78vh;
+                height: 90vh;
+            }
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .title-area {
+            height: 15%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 4% 6%;
+            display: flex;
+            flex-direction: row;
+            gap: 5%;
+        }
+
+        .points-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .point-item {
+            font-size: 26px;
+            margin-bottom: 24px;
+            line-height: 1.6;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .point-icon {
+            color: var(--secondary-color);
+            margin-right: 12px;
+            font-weight: bold;
+        }
+
+        .diagram-area {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .page-info {
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            font-size: 20px;
+            color: #888;
+        }
+
+        /* Slide Specific Styles */
+        
+        /* Slide 1: イントロダクション系 */
+        #slide1 .title-area { background-color: var(--primary-color); }
+        #slide1 { background-color: var(--white); }
+        #slide1 .diagram-box {
+            background: var(--background-gray);
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* Slide 2: 概念説明系 */
+        #slide2 .title-area { background-color: var(--secondary-color); color: var(--white); }
+        #slide2 { background-color: var(--background-gray); }
+        #slide2 .diagram-box { 
+            width: 100%;
+        }
+
+        /* Slide 3: 比較・シナリオ系 */
+        #slide3 .title-area { background-color: var(--primary-color); }
+        #slide3 { background-color: var(--white); }
+        #slide3 .diagram-box {
+            background: var(--background-gray);
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Slide 4: まとめ・比較系 */
+        #slide4 .title-area { background-color: var(--secondary-color); color: var(--white); }
+        #slide4 { background-color: #FFFAEB; } /* プライマリー黄色の薄め */
+        
+        /* Common Diagram Styles */
+        .box {
+            padding: 12px 20px;
+            border-radius: 8px;
+            background: var(--white);
+            border: 2px solid var(--secondary-color);
+            font-weight: bold;
+        }
+        .box-blue { background: var(--secondary-color); color: white; }
+        .box-yellow { background: var(--primary-color); border: 2px solid #E6C200; }
+        .box-gray { background: #E0E0E0; border-color: #999; }
+        .arrow { font-size: 24px; color: var(--secondary-color); font-weight: bold; }
+
+        .comp-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            font-size: 20px;
+        }
+        .comp-table th {
+            background: var(--secondary-color);
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+        .comp-table td {
+            padding: 15px;
+            border-bottom: 1px solid #EEE;
+            line-height: 1.5;
+        }
+        .comp-table tr:last-child td { border-bottom: none; }
+        
+        .highlight { font-weight: bold; color: var(--secondary-color); }
+        .highlight-red { font-weight: bold; color: #E53935; }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <!-- Slide 1: 基本概念 -->
+        <div class="slide slide1 active" id="slide1">
+            <div class="title-area">/rewind コマンドとは？</div>
+            <div class="main-content">
+                <div class="points-area">
+                    <div class="point-item">
+                        <span class="point-icon">●</span>
+                        <span>過去の特定の時点まで作業状態や会話を<span class="highlight">「巻き戻す」</span>機能</span>
+                    </div>
+                    <div class="point-item">
+                        <span class="point-icon">●</span>
+                        <span>AIがアクションを起こすたびに<span class="highlight">「チェックポイント」</span>を自動作成</span>
+                    </div>
+                    <div class="point-item">
+                        <span class="point-icon">●</span>
+                        <span>まるでゲームの<span class="highlight">「オートセーブ」</span>のような仕組み</span>
+                    </div>
+                </div>
+                <div class="diagram-area">
+                    <div class="diagram-box">
+                        <div style="font-size: 60px;">⏪</div>
+                        <div style="font-size: 26px; font-weight: bold; margin: 10px 0 25px;">オートセーブから復元！</div>
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                            <div class="box box-gray" style="font-size: 16px;">開始</div>
+                            <div class="arrow">→</div>
+                            <div class="box box-blue" style="font-size: 16px;">
+                                チェックポイントA<br>
+                                <span style="font-size:12px;font-weight:normal;">(画面構成の決定)</span>
+                            </div>
+                            <div class="arrow">→</div>
+                            <div class="box box-yellow" style="font-size: 16px;">
+                                エラー発生！<br>
+                                <span style="font-size:12px;font-weight:normal;">(コード生成失敗)</span>
+                            </div>
+                        </div>
+                        <div style="color: #E53935; font-weight: bold; font-size: 22px; margin-top: 20px;">
+                            ⤴︎ エラーを取り消して「チェックポイントA」に戻れる
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="page-info">スライド 1/4</div>
+        </div>
+
+        <!-- Slide 2: 理由 -->
+        <div class="slide slide2" id="slide2">
+            <div class="title-area">なぜ「直して」と会話を続けないの？</div>
+            <div class="main-content">
+                <div class="points-area">
+                    <div class="point-item">
+                        <span class="point-icon">●</span>
+                        <span>失敗した状態で会話を続けると<span class="highlight-red">「誤った推論プロセス」</span>が残る</span>
+                    </div>
+                    <div class="point-item">
+                        <span class="point-icon">●</span>
+                        <span>AIが自身の誤りに引きずられて、さらに<span class="highlight-red">見当違いな方向</span>へ進みがち</span>
+                    </div>
+                    <div class="point-item">
+                        <span class="point-icon">●</span>
+                        <span><span class="highlight">失敗する前に戻して、プロンプトを改善</span>してやり直すのがベストプラクティス</span>
+                    </div>
+                </div>
+                <div class="diagram-area">
+                    <div class="diagram-box" style="display: flex; flex-direction: column; gap: 20px;">
+                        <!-- NGパターン -->
+                        <div style="background: white; border: 2px solid #ccc; padding: 20px; border-radius: 12px; position: relative;">
+                            <div style="color: #E53935; font-weight: bold; font-size: 22px; margin-bottom: 10px;">❌ そのまま会話を続ける</div>
+                            <div style="font-size: 18px; line-height: 1.6;">
+                                <div style="color: #666;">AI: 失敗したコードを生成</div>
+                                <div>人: 「ここ直して！」</div>
+                                <div style="color: #666;">AI: 誤った前提のまま修正…</div>
+                                <div style="color: #E53935; font-weight: bold; text-align: center; margin-top: 8px;">どんどん複雑に泥沼化💦</div>
+                            </div>
+                        </div>
+                        <!-- OKパターン -->
+                        <div style="background: white; border: 3px solid var(--secondary-color); padding: 20px; border-radius: 12px;">
+                            <div style="color: var(--secondary-color); font-weight: bold; font-size: 22px; margin-bottom: 10px;">⭕ /rewind を使う</div>
+                            <div style="font-size: 18px; line-height: 1.6;">
+                                <div style="color: #666;">AI: 失敗したコードを生成</div>
+                                <div style="color: var(--secondary-color); font-weight: bold;">⏪ 失敗する前の状態に戻る！</div>
+                                <div>人: 「指示を少し変えてお願い」</div>
+                                <div style="color: var(--secondary-color); font-weight: bold; text-align: center; margin-top: 8px;">クリーンな状態で成功✨</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="page-info">スライド 2/4</div>
+        </div>
+
+        <!-- Slide 3: シナリオ -->
+        <div class="slide slide3" id="slide3">
+            <div class="title-area">シナリオ：ログイン画面のエラー表示</div>
+            <div class="main-content">
+                <div class="points-area">
+                    <div class="point-item">
+                        <span class="point-icon">●</span>
+                        <span>事前に「画面構成」を決め、その後「ログイン画面の作成」を指示</span>
+                    </div>
+                    <div class="point-item">
+                        <span class="point-icon">●</span>
+                        <span>`/clear`を使うと、事前設定の<span class="highlight-red">会話まで全て消えてしまう</span></span>
+                    </div>
+                    <div class="point-item">
+                        <span class="point-icon">●</span>
+                        <span>`/rewind`なら事前設定は残し、<span class="highlight">直前のコードだけ無かったことにできる</span></span>
+                    </div>
+                </div>
+                <div class="diagram-area">
+                    <div class="diagram-box" style="display: flex; flex-direction: column; gap: 15px;">
+                        <div style="font-weight: bold; font-size: 22px; margin-bottom: 10px; text-align: center;">/rewind で必要な部分だけ戻す</div>
+                        
+                        <div style="display: flex; align-items: center; background: white; padding: 12px 20px; border-radius: 8px; border: 2px solid #ccc;">
+                            <span style="font-size: 24px; margin-right: 15px;">💬</span>
+                            <span style="font-size: 18px;">1. 画面構成・デザインの議論</span>
+                            <span style="margin-left: auto; color: #4CAF50; font-weight: bold; font-size: 16px;">（残す✨）</span>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; background: white; padding: 12px 20px; border-radius: 8px; border: 2px solid #ccc;">
+                            <span style="font-size: 24px; margin-right: 15px;">💻</span>
+                            <span style="font-size: 18px;">2. 「ログイン画面を作って」</span>
+                            <span style="margin-left: auto; color: #4CAF50; font-weight: bold; font-size: 16px;">（残す✨）</span>
+                        </div>
+
+                        <div style="text-align: left; color: var(--secondary-color); font-size: 18px; font-weight: bold; margin-left: 20px;">
+                            ⤴︎ /rewindでここまで戻る！
+                        </div>
+
+                        <div style="display: flex; align-items: center; background: #FFEBEE; padding: 12px 20px; border-radius: 8px; border: 2px dashed #E53935; opacity: 0.7;">
+                            <span style="font-size: 24px; margin-right: 15px;">❌</span>
+                            <span style="font-size: 18px;">3. 失敗したコード生成</span>
+                            <span style="margin-left: auto; color: #E53935; font-weight: bold; font-size: 16px;">（無かったことに🗑️）</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="page-info">スライド 3/4</div>
+        </div>
+
+        <!-- Slide 4: 使い分け -->
+        <div class="slide slide4" id="slide4">
+            <div class="title-area">コマンドの使い分け（ケーススタディ）</div>
+            <div class="main-content" style="flex-direction: column; padding: 3% 6%;">
+                <div style="margin-bottom: 20px; font-size: 24px; text-align: center;">
+                    状況に合わせて <span class="highlight">3つのコマンド</span> を使いこなそう！
+                </div>
+                <table class="comp-table">
+                    <tr>
+                        <th style="width: 25%;">コマンド</th>
+                        <th>どんな時に使う？</th>
+                        <th style="width: 20%;">特徴</th>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold; color: #E53935; font-size: 24px;">🧹 /clear</td>
+                        <td>
+                            ・現在取り組んでいるタスクが完全に終わった時<br>
+                            ・無関係な新しいタスクに移行する時<br>
+                            ・失敗履歴でコンテキストが汚染されてしまった時
+                        </td>
+                        <td style="font-weight: bold; color: #E53935;">完全リセット</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold; color: #4CAF50; font-size: 24px;">🗜️ /compact</td>
+                        <td>
+                            ・タスクは継続中で、文脈は引き継ぎたい時<br>
+                            ・コンテキスト使用量が50%に達し、スペースを確保したい時
+                        </td>
+                        <td style="font-weight: bold; color: #4CAF50;">要約・圧縮</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold; color: var(--secondary-color); font-size: 24px;">⏪ /rewind</td>
+                        <td>
+                            ・直近の失敗だけをなかったことにしたい時<br>
+                            ・AIが書き換えたファイルも一緒に元に戻したい時
+                        </td>
+                        <td style="font-weight: bold; color: var(--secondary-color);">ピンポイント<br>巻き戻し</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="page-info">スライド 4/4</div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 4;
+
+        function showSlide(slideNumber) {
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+            document.getElementById(`slide${slideNumber}`).classList.add('active');
+            currentSlide = slideNumber;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) showSlide(currentSlide - 1);
+        }
+
+        document.addEventListener('keydown', function(event) {
+            switch(event.key) {
+                case 'ArrowRight':
+                case ' ':
+                    event.preventDefault();
+                    nextSlide();
+                    break;
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    prevSlide();
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    showSlide(1);
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    showSlide(totalSlides);
+                    break;
+                case '1': case '2': case '3': case '4':
+                    event.preventDefault();
+                    showSlide(parseInt(event.key));
+                    break;
+            }
+        });
+
+        // 初期表示
+        showSlide(1);
+    </script>
+</body>
+</html>
